@@ -1,3 +1,8 @@
 [tools]
 go = "1.24"
 golangci-lint = "1"
+"go:github.com/air-verse/air" = "latest"
+
+[tasks.dev]
+description = "Run dev server with live reload"
+run = "air"

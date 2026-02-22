@@ -100,6 +100,24 @@ server {
 }
 ```
 
+## Working with the source-code locally.
+
+This project uses [mise-en-place](https://mise.jdx.dev/) for tooling  management and build tasks.
+
+Once you have mise installed, run:
+
+
+```sh
+mise install # only once, after the initial clone
+```
+
+For ease of development, there's a dev server with hot reload via 
+[air](https://github.com/air-verse/air)
+
+```
+mise run dev # to run with hot reload with air
+```
+
 ## License
 
 auth_server is MIT licensed

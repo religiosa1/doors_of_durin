@@ -37,9 +37,9 @@ func main() {
 			middleware.WithLogger(logger),
 		)
 
-		http.Handle("/static", http.FileServer(http.FS(staticFiles)))
+		mux.Handle("/static/", http.FileServer(http.FS(staticFiles)))
 
-		mux.HandleFunc("/", handlers.Healthcheck)
+		mux.HandleFunc("GET /{$}", handlers.Healthcheck)
 
 		mux.Handle("/verify", middlewares(handlers.Verify{}))
 		mux.Handle("GET /login", middlewares(handlers.Login{}))

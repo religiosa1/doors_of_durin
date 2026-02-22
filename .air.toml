@@ -1,0 +1,8 @@
+[build]
+cmd = "go build -o ./tmp/auth_server ."
+bin = "./tmp/auth_server"
+include_ext = ["go", "gohtml", "css"]
+exclude_dir = ["tmp"]
+
+[log]
+main_only = true
