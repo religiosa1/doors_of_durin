@@ -1,0 +1,19 @@
+{{define "title"}}Login{{end}}
+
+{{define "content"}}
+<form method="post" action="/login">
+  {{if .Error}}
+  <p class="error">{{.Error}}</p>
+  {{end}}
+  <label>
+    Username
+    <input name="username" type="text" autocomplete="username" required>
+  </label>
+  <label>
+    Password
+    <input name="password" type="password" autocomplete="current-password" required>
+  </label>
+  <input type="hidden" name="redirect_to" value="{{.RedirectTo}}">
+  <button type="submit">Login</button>
+</form>
+{{end}}
