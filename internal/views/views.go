@@ -14,7 +14,11 @@ var files embed.FS
 var tmpl = map[string]*template.Template{}
 
 func init() {
-	for _, page := range []string{"login.gohtml", "user_list.gohtml", "users_form.gohtml"} {
+	for _, page := range []string{
+		"login.gohtml",
+		"user_list.gohtml",
+		"users_form.gohtml",
+	} {
 		tmpl[page] = template.Must(template.ParseFS(files, "base.gohtml", page))
 	}
 }
