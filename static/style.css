@@ -1,39 +1,71 @@
 :root {
-  color-scheme: light dark;
+	color-scheme: light dark;
 
-  --clr-txt: light-dark(#000, #FFF);
-  --clr-bg:light-dark(#efedea, #393b42); 
-  --clr-danger: #982323; /* Signal red */
-  --clr-brd: gray;
-  --border: 1px solid var(--clr-brd);
-  --border-radius: 0.4rem;
+	--clr-txt: light-dark(#000, #fff);
+	--clr-bg: light-dark(#efedea, #1f1f28);
+	--clr-bg2: light-dark(#eeecea, #2a2a37cc);
+	--clr-danger: #dc3545;
+	--clr-brd: gray;
+	--border: 1px solid var(--clr-brd);
+	--border-radius: 0.5rem;
 }
 body {
-  color: var(--clr-txt);
-  background-color: var(--clr-bg);
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0;
-  font-size: 16px;
-  font-family: Arial, sans-serif;
-}
-
-.form-group {
-  display: block;
-  margin: 0 0 1rem;
+	color: var(--clr-txt);
+	background-color: var(--clr-bg);
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: 0;
+	font-size: 16px;
+	font-family: Arial, sans-serif;
 }
 
 .error {
-  color: var(--clr-danger);
+	color: var(--clr-danger);
 }
 
 .full-screen {
-  /* TODO: actual style for the centered form */
+	display: grid;
+	align-items: center;
+	min-height: 100vh;
+	min-height: 100dvh;
+}
+
+h1 {
+	font-size: 2rem;
+	margin: 0 0 2rem;
 }
 
 .form {
-  padding: 1rem;
-  margin: 0 0 1rem;
-  border: var(--border);
-  border-radius: var(--border-radius)
+	padding: 2rem;
+	border: var(--border);
+	border-radius: var(--border-radius);
+	max-width: 800px;
+	margin: auto;
+	background-color: var(--clr-bg2);
+	backdrop-filter: blur(3px);
+}
+
+.form-group {
+	display: block;
+	margin: 0 0 1.5rem;
+}
+
+.form-group__label {
+	display: block;
+	margin: 0 0 0.5rem;
+}
+
+.form-group__input {
+	display: flex;
+	box-sizing: border-box;
+	width: 100%;
+	height: 2rem;
+	font-size: 16px;
+}
+
+body.login {
+	background-image: url("/static/doors_of_durin.svg");
+	background-position: center center;
+	background-repeat: no-repeat;
+	background-size: auto 90%;
 }

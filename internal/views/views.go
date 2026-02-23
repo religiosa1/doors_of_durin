@@ -1,3 +1,4 @@
+// Package views renders html templates to create an HTML ui
 package views
 
 import (

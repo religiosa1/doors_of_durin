@@ -1,21 +1,22 @@
-{{define "title"}}Login{{end}}
-{{define "bodyclass"}}full-screen{{end}}
+{{define "title"}}Authorization Required{{end}}
+{{define "bodyattr"}}class="full-screen login"{{end}}
 
 {{define "content"}}
 <div class="form">
+  <h1>Authorization Required</h1>
   <form method="post" action="/login">
+    <label class="form-group">
+      <span class="form-group__label">Username</span>
+      <input class="form-group__input" name="username" type="text" autocomplete="username" required>
+    </label>
+    <label class="form-group">
+      <span class="form-group__label">Password</span>
+      <input class="form-group__input" name="password" type="password" autocomplete="current-password" required>
+    </label>
+    <input type="hidden" name="redirect_to" value="{{.RedirectTo}}">
     {{if .Error}}
     <p class="error">{{.Error}}</p>
     {{end}}
-    <label class="form-group">
-      Username
-      <input name="username" type="text" autocomplete="username" required>
-    </label>
-    <label class="form-group">
-      Password
-      <input name="password" type="password" autocomplete="current-password" required>
-    </label>
-    <input type="hidden" name="redirect_to" value="{{.RedirectTo}}">
     <button type="submit">Login</button>
   </form>
 </div>

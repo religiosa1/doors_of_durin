@@ -1,4 +1,5 @@
 words = [
     "authserver",
     "bodyclass",
+    "tmpl",
 ]
