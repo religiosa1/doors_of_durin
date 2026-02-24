@@ -6,3 +6,7 @@ golangci-lint = "1"
 [tasks.dev]
 description = "Run dev server with live reload"
 run = "air"
+
+[tasks.test]
+description = "Run tests"
+run = "go test ./..."

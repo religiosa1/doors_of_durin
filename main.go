@@ -10,9 +10,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	config "gitgub.com/religiosa1/auth_server/internal/config"
-	handlers "gitgub.com/religiosa1/auth_server/internal/http/handlers"
-	middleware "gitgub.com/religiosa1/auth_server/internal/http/middleware"
+	config "github.com/religiosa1/auth_server/internal/config"
+	handlers "github.com/religiosa1/auth_server/internal/http/handlers"
+	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
 )
 
 //go:embed static

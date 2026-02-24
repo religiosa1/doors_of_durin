@@ -4,8 +4,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	middleware "gitgub.com/religiosa1/auth_server/internal/http/middleware"
-	views "gitgub.com/religiosa1/auth_server/internal/views"
+	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
+	views "github.com/religiosa1/auth_server/internal/views"
 )
 
 type loginData struct {
