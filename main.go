@@ -13,6 +13,7 @@ import (
 	config "github.com/religiosa1/auth_server/internal/config"
 	handlers "github.com/religiosa1/auth_server/internal/http/handlers"
 	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
+	"github.com/religiosa1/auth_server/internal/repository"
 )
 
 //go:embed static
@@ -25,6 +26,11 @@ func main() {
 	}
 
 	logger := setupLogger(config.LogType, config.LogLevel)
+
+	db, err := repository.New(config.DBFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -43,7 +49,7 @@ func main() {
 
 		mux.Handle("/verify", middlewares(handlers.Verify{}))
 		mux.Handle("GET /login", middlewares(handlers.Login{}))
-		mux.Handle("POST /login", middlewares(handlers.LoginSubmit{}))
+		mux.Handle("POST /login", middlewares(handlers.LoginSubmit{DB: db}))
 
 		// mux.Handle("GET /users", middlewares(handlers.UserList))
 		// mux.Handle("GET /users/new", middlewares(handlers.UserCreate))

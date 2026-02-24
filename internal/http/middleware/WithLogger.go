@@ -12,14 +12,14 @@ import (
 type LoggingContextKey string
 
 const (
-	loggingContextRequestId   = LoggingContextKey("logging_context.request_id")
+	loggingContextRequestID   = LoggingContextKey("logging_context.request_id")
 	loggingContextLogger      = LoggingContextKey("logging_context.logger")
 	loggingContextRequestInfo = LoggingContextKey("logging_context.request_info")
 )
 
 type LoggingContext struct {
 	Logger      *slog.Logger
-	RequestId   string
+	RequestID   string
 	RequestInfo RequestInfo
 }
 
@@ -29,10 +29,11 @@ func WithLogger(logger *slog.Logger) Middleware {
 			id := ulid.Make().String()
 			newLogger := logger.With(slog.String("request_id", id))
 
-			ctx := context.WithValue(r.Context(), loggingContextRequestId, id)
+			ctx := context.WithValue(r.Context(), loggingContextRequestID, id)
 			ctx = context.WithValue(ctx, loggingContextLogger, newLogger)
 
 			info := parseRequestInfo(r)
+			ctx = context.WithValue(ctx, loggingContextRequestInfo, info)
 
 			newLogger.Info("Incoming request",
 				slog.String("method", info.Method),
@@ -73,12 +74,12 @@ func GetLogger(ctx context.Context) *slog.Logger {
 	return logger
 }
 
-func GetRequestId(ctx context.Context) string {
-	contextId, _ := ctx.Value(loggingContextRequestId).(string)
-	return contextId
+func GetRequestID(ctx context.Context) string {
+	contextID, _ := ctx.Value(loggingContextRequestID).(string)
+	return contextID
 }
 
 func GetRequestInfo(ctx context.Context) RequestInfo {
-	contextId, _ := ctx.Value(loggingContextRequestId).(RequestInfo)
-	return contextId
+	contextID, _ := ctx.Value(loggingContextRequestInfo).(RequestInfo)
+	return contextID
 }

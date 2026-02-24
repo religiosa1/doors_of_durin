@@ -1,12 +1,18 @@
 package handlers
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
 	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
+	"github.com/religiosa1/auth_server/internal/repository"
+	"github.com/religiosa1/auth_server/internal/repository/sessions"
+	"github.com/religiosa1/auth_server/internal/repository/users"
 	views "github.com/religiosa1/auth_server/internal/views"
 )
+
+const SessionCookieName = "session_id"
 
 type loginData struct {
 	RedirectTo string
@@ -17,7 +23,7 @@ type Login struct{}
 
 func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	data := loginData{
-		RedirectTo: r.URL.Query().Get("redirect_to"),
+		RedirectTo: middleware.GetRequestInfo(r.Context()).OriginalURL(),
 	}
 	if err := views.Render(w, "login.gohtml", data); err != nil {
 		logger := middleware.GetLogger(r.Context())
@@ -25,7 +31,9 @@ func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type LoginSubmit struct{}
+type LoginSubmit struct {
+	DB *repository.DB
+}
 
 func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logger := middleware.GetLogger(r.Context())
@@ -36,19 +44,62 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	username := r.FormValue("username")
+	password := r.FormValue("password")
 	redirectTo := r.FormValue("redirect_to")
-
-	_ = username
-	// TODO: look up user, verify password, create session, set cookie
 
 	logger.Info("login attempt", slog.String("username", username))
 
-	data := loginData{
-		RedirectTo: redirectTo,
-		Error:      "Invalid username or password",
+	renderUnauthorized := func() {
+		data := loginData{
+			RedirectTo: redirectTo,
+			Error:      "Invalid username or password",
+		}
+		w.WriteHeader(http.StatusUnauthorized)
+		if err := views.Render(w, "login.gohtml", data); err != nil {
+			logger.Error("failed to render login page", slog.Any("error", err))
+		}
 	}
-	w.WriteHeader(http.StatusUnauthorized)
-	if err := views.Render(w, "login.gohtml", data); err != nil {
-		logger.Error("failed to render login page", slog.Any("error", err))
+
+	ok, err := users.CheckPassword(*l.DB, username, password)
+	if err != nil {
+		if errors.Is(err, repository.ErrRecordNotFound) {
+			renderUnauthorized()
+			return
+		}
+		logger.Error("error checking password", slog.Any("error", err))
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
 	}
+	if !ok {
+		renderUnauthorized()
+		return
+	}
+
+	userID, err := users.GetUserID(*l.DB, username)
+	if err != nil {
+		logger.Error("error getting user ID after successful auth", slog.String("username", username), slog.Any("error", err))
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	sessionID, err := sessions.CreateSession(*l.DB, userID)
+	if err != nil {
+		logger.Error("error creating session", slog.Any("error", err))
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     SessionCookieName,
+		Value:    sessionID,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	target := redirectTo
+	if target == "" {
+		target = "/"
+	}
+	http.Redirect(w, r, target, http.StatusSeeOther)
 }
