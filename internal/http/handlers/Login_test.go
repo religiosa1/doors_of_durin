@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/religiosa1/auth_server/internal/csrf"
 	"github.com/religiosa1/auth_server/internal/http/handlers"
 	"github.com/religiosa1/auth_server/internal/ratelimit"
 	"github.com/religiosa1/auth_server/internal/repository"
@@ -27,14 +28,20 @@ func newTestDB(t *testing.T) *repository.DB {
 
 func loginRequest(t *testing.T, username, password, redirectTo string) *http.Request {
 	t.Helper()
+	csrfToken, err := csrf.GenerateToken()
+	if err != nil {
+		t.Fatalf("loginRequest: generate CSRF token: %v", err)
+	}
 	form := url.Values{}
 	form.Set("username", username)
 	form.Set("password", password)
+	form.Set(csrf.FormFieldName, csrfToken)
 	if redirectTo != "" {
 		form.Set("redirect_to", redirectTo)
 	}
 	req := httptest.NewRequest("POST", "/login", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: csrf.CookieName, Value: csrfToken})
 	return req
 }
 
@@ -45,6 +52,76 @@ func sessionCookie(rr *httptest.ResponseRecorder) *http.Cookie {
 		}
 	}
 	return nil
+}
+
+func TestLoginSubmit_CSRF_MissingCookie(t *testing.T) {
+	db := newTestDB(t)
+	if err := users.Create(*db, "alice", "secret"); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	csrfToken, _ := csrf.GenerateToken()
+	form := url.Values{}
+	form.Set("username", "alice")
+	form.Set("password", "secret")
+	form.Set(csrf.FormFieldName, csrfToken)
+	req := httptest.NewRequest("POST", "/login", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// no CSRF cookie added
+
+	rr := httptest.NewRecorder()
+	handlers.LoginSubmit{DB: db}.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("expected %d, got %d", http.StatusForbidden, rr.Code)
+	}
+}
+
+func TestLoginSubmit_CSRF_MissingFormField(t *testing.T) {
+	db := newTestDB(t)
+	if err := users.Create(*db, "alice", "secret"); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	csrfToken, _ := csrf.GenerateToken()
+	form := url.Values{}
+	form.Set("username", "alice")
+	form.Set("password", "secret")
+	// no csrf_token form field
+	req := httptest.NewRequest("POST", "/login", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: csrf.CookieName, Value: csrfToken})
+
+	rr := httptest.NewRecorder()
+	handlers.LoginSubmit{DB: db}.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("expected %d, got %d", http.StatusForbidden, rr.Code)
+	}
+}
+
+func TestLoginSubmit_CSRF_TokenMismatch(t *testing.T) {
+	db := newTestDB(t)
+	if err := users.Create(*db, "alice", "secret"); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	cookieToken, _ := csrf.GenerateToken()
+	formToken, _ := csrf.GenerateToken()
+	form := url.Values{}
+	form.Set("username", "alice")
+	form.Set("password", "secret")
+	form.Set(csrf.FormFieldName, formToken)
+	req := httptest.NewRequest("POST", "/login", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: csrf.CookieName, Value: cookieToken})
+
+	rr := httptest.NewRecorder()
+	handlers.LoginSubmit{DB: db}.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("expected %d, got %d", http.StatusForbidden, rr.Code)
+	}
 }
 
 func TestLoginSubmit_Success_NoRedirectTo(t *testing.T) {

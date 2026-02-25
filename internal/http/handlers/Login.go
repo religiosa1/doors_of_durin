@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/religiosa1/auth_server/internal/csrf"
 	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
 	"github.com/religiosa1/auth_server/internal/ratelimit"
 	"github.com/religiosa1/auth_server/internal/repository"
@@ -17,16 +18,25 @@ import (
 type loginData struct {
 	RedirectTo string
 	Error      string
+	CSRFToken  string
 }
 
 type Login struct{}
 
 func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	logger := middleware.GetLogger(r.Context())
+	csrfToken, err := csrf.GenerateToken()
+	if err != nil {
+		logger.Error("failed to generate CSRF token", slog.Any("error", err))
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	csrf.SetCookie(w, csrfToken)
 	data := loginData{
 		RedirectTo: middleware.GetRequestInfo(r.Context()).OriginalURL(),
+		CSRFToken:  csrfToken,
 	}
 	if err := views.Render(w, "login.gohtml", data); err != nil {
-		logger := middleware.GetLogger(r.Context())
 		logger.Error("failed to render login page", slog.Any("error", err))
 	}
 }
@@ -62,6 +72,11 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !csrf.ValidateToken(r) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	redirectTo := r.FormValue("redirect_to")
@@ -69,9 +84,17 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logger.Info("login attempt", slog.String("username", username))
 
 	renderUnauthorized := func() {
+		newToken, err := csrf.GenerateToken()
+		if err != nil {
+			logger.Error("failed to generate CSRF token", slog.Any("error", err))
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		csrf.SetCookie(w, newToken)
 		data := loginData{
 			RedirectTo: redirectTo,
 			Error:      "Invalid username or password",
+			CSRFToken:  newToken,
 		}
 		w.WriteHeader(http.StatusUnauthorized)
 		if err := views.Render(w, "login.gohtml", data); err != nil {

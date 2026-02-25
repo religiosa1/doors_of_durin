@@ -14,6 +14,7 @@
       <input class="form-group__input" name="password" type="password" autocomplete="current-password" required>
     </label>
     <input type="hidden" name="redirect_to" value="{{.RedirectTo}}">
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
     {{if .Error}}
     <p class="error">{{.Error}}</p>
     {{end}}
