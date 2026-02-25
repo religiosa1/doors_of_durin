@@ -28,6 +28,37 @@ and permissions.
 No Web-UI for registration or password restore as it's assumed list of users
 is small enough for manual management.
 
+## CLI usage:
+
+```
+Commands:
+  user add [<username>] [flags]
+    Add a new user
+
+  user delete [<username>] [flags]
+    Delete a user
+
+  user rename [<username>] [flags]
+    Rename a user
+
+  user list [flags]
+    List all users
+
+  session add [<username>] [flags]
+    Create a session (login)
+
+  session delete [flags]
+    Delete sessions
+
+  session list [flags]
+    List all sessions
+
+  serve [flags]
+    Run HTTP server
+
+Run "auth_server <command> --help" for more information on a command.
+```
+
 ### To Do in future iterations:
 
 Perform some basic monitoring and alerting if the traffic to the services
@@ -105,16 +136,15 @@ server {
 
 ## Working with the source-code locally.
 
-This project uses [mise-en-place](https://mise.jdx.dev/) for tooling  management and build tasks.
+This project uses [mise-en-place](https://mise.jdx.dev/) for tooling management and build tasks.
 
 Once you have mise installed, run:
-
 
 ```sh
 mise install # only once, after the initial clone
 ```
 
-For ease of development, there's a dev server with hot reload via 
+For ease of development, there's a dev server with hot reload via
 [air](https://github.com/air-verse/air)
 
 ```

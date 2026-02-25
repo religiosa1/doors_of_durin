@@ -4,8 +4,10 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
+	"github.com/religiosa1/auth_server/internal/ratelimit"
 	"github.com/religiosa1/auth_server/internal/repository"
 	"github.com/religiosa1/auth_server/internal/repository/sessions"
 	"github.com/religiosa1/auth_server/internal/repository/users"
@@ -32,11 +34,29 @@ func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type LoginSubmit struct {
-	DB *repository.DB
+	DB      *repository.DB
+	Limiter *ratelimit.Limiter
+}
+
+func (l LoginSubmit) recordFailure(r *http.Request) {
+	if l.Limiter == nil {
+		return
+	}
+	ip := middleware.GetRequestInfo(r.Context()).IP
+	l.Limiter.RecordFailure(ip)
+	time.Sleep(l.Limiter.FailDelay())
 }
 
 func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logger := middleware.GetLogger(r.Context())
+
+	if l.Limiter != nil {
+		ip := middleware.GetRequestInfo(r.Context()).IP
+		if l.Limiter.IsBlocked(ip) {
+			http.Error(w, "too many requests", http.StatusTooManyRequests)
+			return
+		}
+	}
 
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
@@ -63,6 +83,7 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ok, err := users.CheckPassword(*l.DB, username, password)
 	if err != nil {
 		if errors.Is(err, repository.ErrRecordNotFound) {
+			l.recordFailure(r)
 			renderUnauthorized()
 			return
 		}
@@ -71,6 +92,7 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !ok {
+		l.recordFailure(r)
 		renderUnauthorized()
 		return
 	}

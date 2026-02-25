@@ -12,6 +12,7 @@ import (
 
 	handlers "github.com/religiosa1/auth_server/internal/http/handlers"
 	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
+	"github.com/religiosa1/auth_server/internal/ratelimit"
 )
 
 var StaticFiles embed.FS
@@ -32,6 +33,12 @@ func (s *Serve) Run() error {
 	MergeValueInto(&cfg.Port, s.Port)
 	MergeValueInto(&cfg.Host, s.Host)
 
+	limiter := ratelimit.New(ratelimit.Config{
+		MaxAttempts: cfg.RateLimit.MaxAttempts,
+		Window:      cfg.RateLimit.Window,
+		FailDelay:   cfg.RateLimit.FailDelay,
+	})
+
 	logger := setupLogger(cfg.LogType, cfg.LogLevel)
 
 	done := make(chan os.Signal, 1)
@@ -51,7 +58,7 @@ func (s *Serve) Run() error {
 
 		mux.Handle("/verify", middlewares(handlers.Verify{DB: db, SessionTTL: cfg.SessionTTL}))
 		mux.Handle("GET /login", middlewares(handlers.Login{}))
-		mux.Handle("POST /login", middlewares(handlers.LoginSubmit{DB: db}))
+		mux.Handle("POST /login", middlewares(handlers.LoginSubmit{DB: db, Limiter: limiter}))
 
 		if err := http.ListenAndServe(address, mux); err != nil {
 			logger.Error("Error starting the server", slog.Any("error", err))

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/religiosa1/auth_server/internal/http/handlers"
+	"github.com/religiosa1/auth_server/internal/ratelimit"
 	"github.com/religiosa1/auth_server/internal/repository"
 	"github.com/religiosa1/auth_server/internal/repository/sessions"
 	"github.com/religiosa1/auth_server/internal/repository/users"
@@ -124,5 +125,64 @@ func TestLoginSubmit_UnknownUser(t *testing.T) {
 	}
 	if cookie := sessionCookie(rr); cookie != nil {
 		t.Fatal("expected no session_id cookie for unknown user")
+	}
+}
+
+func TestLoginSubmit_RateLimit_BlocksAfterThreshold(t *testing.T) {
+	db := newTestDB(t)
+	if err := users.Create(*db, "alice", "secret"); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	limiter := ratelimit.New(ratelimit.Config{MaxAttempts: 3, Window: time.Minute, FailDelay: 0})
+	h := handlers.LoginSubmit{DB: db, Limiter: limiter}
+
+	for i := 0; i < 3; i++ {
+		rr := httptest.NewRecorder()
+		h.ServeHTTP(rr, loginRequest(t, "alice", "wrong", ""))
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("attempt %d: expected %d, got %d", i+1, http.StatusUnauthorized, rr.Code)
+		}
+	}
+
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, loginRequest(t, "alice", "secret", ""))
+	if rr.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected %d after threshold, got %d", http.StatusTooManyRequests, rr.Code)
+	}
+}
+
+func TestLoginSubmit_RateLimit_SuccessDoesNotIncrement(t *testing.T) {
+	db := newTestDB(t)
+	if err := users.Create(*db, "alice", "secret"); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	limiter := ratelimit.New(ratelimit.Config{MaxAttempts: 1, Window: time.Minute, FailDelay: 0})
+	h := handlers.LoginSubmit{DB: db, Limiter: limiter}
+
+	for i := 0; i < 3; i++ {
+		rr := httptest.NewRecorder()
+		h.ServeHTTP(rr, loginRequest(t, "alice", "secret", ""))
+		if rr.Code != http.StatusSeeOther {
+			t.Fatalf("successful login %d: expected %d, got %d", i+1, http.StatusSeeOther, rr.Code)
+		}
+	}
+}
+
+func TestLoginSubmit_FailDelay(t *testing.T) {
+	db := newTestDB(t)
+
+	const delay = 20 * time.Millisecond
+	limiter := ratelimit.New(ratelimit.Config{MaxAttempts: 100, Window: time.Minute, FailDelay: delay})
+	h := handlers.LoginSubmit{DB: db, Limiter: limiter}
+
+	start := time.Now()
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, loginRequest(t, "nobody", "password", ""))
+	elapsed := time.Since(start)
+
+	if elapsed < delay {
+		t.Fatalf("expected fail delay >= %v, got %v", delay, elapsed)
 	}
 }
