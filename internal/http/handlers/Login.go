@@ -34,8 +34,9 @@ func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type LoginSubmit struct {
-	DB      *repository.DB
-	Limiter *ratelimit.Limiter
+	DB         *repository.DB
+	Limiter    *ratelimit.Limiter
+	SessionTTL time.Duration
 }
 
 func (l LoginSubmit) recordFailure(r *http.Request) {
@@ -117,6 +118,8 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
+		// MaxAge 0 omits the attribute entirely, making this a session cookie — matches TTL=0 meaning no expiry on the server side too.
+		MaxAge: int(l.SessionTTL.Seconds()),
 	})
 
 	target := redirectTo

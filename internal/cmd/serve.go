@@ -58,7 +58,7 @@ func (s *Serve) Run() error {
 
 		mux.Handle("/verify", middlewares(handlers.Verify{DB: db, SessionTTL: cfg.SessionTTL}))
 		mux.Handle("GET /login", middlewares(handlers.Login{}))
-		mux.Handle("POST /login", middlewares(handlers.LoginSubmit{DB: db, Limiter: limiter}))
+		mux.Handle("POST /login", middlewares(handlers.LoginSubmit{DB: db, Limiter: limiter, SessionTTL: cfg.SessionTTL}))
 
 		if err := http.ListenAndServe(address, mux); err != nil {
 			logger.Error("Error starting the server", slog.Any("error", err))
