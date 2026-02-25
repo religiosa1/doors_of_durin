@@ -22,6 +22,11 @@ On 401 responses, users may be redirected in nginx to the `/login` page,
 which will allow user to enter their login/password and will set the session id
 cookie.
 
+`POST /logout` deletes the session from the database and clears the session
+cookie. It accepts an optional `back_url` query parameter to redirect the user
+after logout; if omitted, the user is redirected to `/`. Returns 401 if no
+session cookie is present in the request.
+
 `/users` series of pages provides basic CRUD for admins, to manage users roles
 and permissions.
 

@@ -14,8 +14,6 @@ import (
 	views "github.com/religiosa1/auth_server/internal/views"
 )
 
-const SessionCookieName = "session_id"
-
 type loginData struct {
 	RedirectTo string
 	Error      string
