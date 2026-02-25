@@ -14,8 +14,9 @@ are stored in the same database.
 
 The main endpoint is `/verify`. It's intended to be used as the destination of
 nginx `auth_request` -- it receives headers from request to upstream and
-returns either 201 or 401 status based on the presence and validity of the
-session id cookie.
+returns either 200 or 401 status based on the presence and validity of the
+session id cookie. On a 200 response it sets an `X-Auth-User` header containing
+the authenticated username, which can be forwarded to the upstream application.
 
 On 401 responses, users may be redirected in nginx to the `/login` page,
 which will allow user to enter their login/password and will set the session id
@@ -72,6 +73,8 @@ server {
     location / {
         auth_request /auth;
         auth_request_set $auth_status $upstream_status;
+        auth_request_set $auth_user $upstream_http_x_auth_user;
+        proxy_set_header X-Auth-User $auth_user;
 
         # On auth failure, show the login page
         error_page 401 = @login;

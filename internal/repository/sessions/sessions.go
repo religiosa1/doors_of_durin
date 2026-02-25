@@ -10,13 +10,27 @@ import (
 	"github.com/religiosa1/auth_server/internal/repository"
 )
 
-func CheckSessionExists(db repository.DB, sessionID string) error {
-	var id string
-	err := db.DB.QueryRow("SELECT `id` FROM `sessions` WHERE `id` = ?", sessionID).Scan(&id)
-	if errors.Is(err, sql.ErrNoRows) {
-		return repository.ErrRecordNotFound
+// GetSession returns the session with the given ID, joining the users table to
+// include the username. If notBefore is non-zero, sessions whose activity
+// timestamp (COALESCE(last_used_at, created_at)) predates it are treated as
+// expired and return repository.ErrRecordNotFound.
+func GetSession(db repository.DB, sessionID string, notBefore time.Time) (Session, error) {
+	query := `
+		SELECT s.id, u.name AS username, s.created_at, s.last_used_at
+		FROM sessions s
+		JOIN users u ON u.id = s.user_id
+		WHERE s.id = ?`
+	args := []any{sessionID}
+	if !notBefore.IsZero() {
+		query += " AND COALESCE(s.last_used_at, s.created_at) >= ?"
+		args = append(args, notBefore.UTC().Format("2006-01-02 15:04:05"))
 	}
-	return err
+	var session Session
+	err := db.DB.Get(&session, query, args...)
+	if errors.Is(err, sql.ErrNoRows) {
+		return session, repository.ErrRecordNotFound
+	}
+	return session, err
 }
 
 func RegisterSessionUsage(db repository.DB, sessionID string) error {

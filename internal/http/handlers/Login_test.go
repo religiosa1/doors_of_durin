@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/religiosa1/auth_server/internal/http/handlers"
 	"github.com/religiosa1/auth_server/internal/repository"
@@ -65,7 +66,7 @@ func TestLoginSubmit_Success_NoRedirectTo(t *testing.T) {
 	if cookie == nil {
 		t.Fatal("expected session_id cookie to be set")
 	}
-	if err := sessions.CheckSessionExists(*db, cookie.Value); err != nil {
+	if _, err := sessions.GetSession(*db, cookie.Value, time.Time{}); err != nil {
 		t.Fatalf("session not found in DB: %v", err)
 	}
 }
@@ -90,7 +91,7 @@ func TestLoginSubmit_Success_WithRedirectTo(t *testing.T) {
 	if cookie == nil {
 		t.Fatal("expected session_id cookie to be set")
 	}
-	if err := sessions.CheckSessionExists(*db, cookie.Value); err != nil {
+	if _, err := sessions.GetSession(*db, cookie.Value, time.Time{}); err != nil {
 		t.Fatalf("session not found in DB: %v", err)
 	}
 }

@@ -47,7 +47,7 @@ func TestCreateSession(t *testing.T) {
 	}
 }
 
-func TestCheckSessionExists(t *testing.T) {
+func TestGetSession(t *testing.T) {
 	db := newTestDB(t)
 	userID := mustCreateUser(t, db)
 
@@ -55,16 +55,39 @@ func TestCheckSessionExists(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateSession: %v", err)
 	}
-	if err := sessions.CheckSessionExists(*db, sessionID); err != nil {
-		t.Fatalf("CheckSessionExists: %v", err)
+	session, err := sessions.GetSession(*db, sessionID, time.Time{})
+	if err != nil {
+		t.Fatalf("GetSession: %v", err)
+	}
+	if session.ID != sessionID {
+		t.Fatalf("expected session ID %q, got %q", sessionID, session.ID)
+	}
+	if session.Username != "testuser" {
+		t.Fatalf("expected username %q, got %q", "testuser", session.Username)
 	}
 }
 
-func TestCheckSessionExists_NotFound(t *testing.T) {
+func TestGetSession_NotFound(t *testing.T) {
 	db := newTestDB(t)
-	err := sessions.CheckSessionExists(*db, "nonexistent")
+	_, err := sessions.GetSession(*db, "nonexistent", time.Time{})
 	if !errors.Is(err, repository.ErrRecordNotFound) {
 		t.Fatalf("expected ErrRecordNotFound, got %v", err)
+	}
+}
+
+func TestGetSession_Expired(t *testing.T) {
+	db := newTestDB(t)
+	userID := mustCreateUser(t, db)
+
+	sessionID, err := sessions.CreateSession(*db, userID)
+	if err != nil {
+		t.Fatalf("CreateSession: %v", err)
+	}
+	// notBefore set to 1 minute in the future — session appears expired
+	notBefore := time.Now().Add(time.Minute)
+	_, err = sessions.GetSession(*db, sessionID, notBefore)
+	if !errors.Is(err, repository.ErrRecordNotFound) {
+		t.Fatalf("expected ErrRecordNotFound for expired session, got %v", err)
 	}
 }
 
@@ -101,7 +124,7 @@ func TestDeleteSession(t *testing.T) {
 	if err := sessions.DeleteSession(*db, sessionID); err != nil {
 		t.Fatalf("DeleteSession: %v", err)
 	}
-	err = sessions.CheckSessionExists(*db, sessionID)
+	_, err = sessions.GetSession(*db, sessionID, time.Time{})
 	if !errors.Is(err, repository.ErrRecordNotFound) {
 		t.Fatalf("expected session to be gone, got %v", err)
 	}

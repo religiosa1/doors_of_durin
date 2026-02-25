@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -15,10 +16,11 @@ type Config struct {
 	// logger minimum level: "debug", "info", "warn", "error"
 	LogLevel string `yaml:"log_level" env:"LOG_LEVEL" env-default:"info"`
 	// structured log output type: "json", "text"
-	LogType string `yaml:"log_type" env:"LOG_TYPE" env-default:"json"`
-	DBFile  string `yaml:"db_file" env:"DB_FILE" env-default:"auth_server.sqlite3"`
-	Port    string `yaml:"port" env:"PORT" env-default:"4000"`
-	Host    string `yaml:"host" env:"HOST" env-default:"localhost"`
+	LogType    string        `yaml:"log_type" env:"LOG_TYPE" env-default:"json"`
+	DBFile     string        `yaml:"db_file" env:"DB_FILE" env-default:"auth_server.sqlite3"`
+	Port       string        `yaml:"port" env:"PORT" env-default:"4000"`
+	Host       string        `yaml:"host" env:"HOST" env-default:"localhost"`
+	SessionTTL time.Duration `yaml:"session_ttl" env:"SESSION_TTL" env-default:"168h"`
 }
 
 func Load(configPath string) (Config, error) {
