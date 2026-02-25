@@ -4,12 +4,25 @@ package users
 import (
 	"database/sql"
 	"errors"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
 	sqlite3 "github.com/mattn/go-sqlite3"
 	"github.com/religiosa1/auth_server/internal/repository"
 )
+
+type User struct {
+	Name       string    `db:"name"        json:"name"`
+	CreatedAt  time.Time `db:"created_at"  json:"createdAt"`
+	ModifiedAt time.Time `db:"modified_at" json:"modifiedAt"`
+}
+
+func List(db repository.DB) ([]User, error) {
+	var result []User
+	err := db.DB.Select(&result, "SELECT name, created_at, modified_at FROM users ORDER BY name")
+	return result, err
+}
 
 func GetUserID(db repository.DB, username string) (int64, error) {
 	var id int64

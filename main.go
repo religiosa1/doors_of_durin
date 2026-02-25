@@ -2,105 +2,41 @@ package main
 
 import (
 	"embed"
-	"fmt"
-	"log"
-	"log/slog"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 
-	config "github.com/religiosa1/auth_server/internal/config"
-	handlers "github.com/religiosa1/auth_server/internal/http/handlers"
-	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
-	"github.com/religiosa1/auth_server/internal/repository"
+	"github.com/alecthomas/kong"
+	cmd "github.com/religiosa1/auth_server/internal/cmd"
 )
 
 //go:embed static
 var staticFiles embed.FS
 
+type CLI struct {
+	User    UserCmd  `cmd:"" help:"Manage users"`
+	Session SessCmd  `cmd:"" help:"Manage sessions"`
+	Serve   cmd.Serve `cmd:"" default:"withargs" help:"Run HTTP server"`
+}
+
+type UserCmd struct {
+	Add    cmd.UserAdd    `cmd:"" help:"Add a new user"`
+	Delete cmd.UserDelete `cmd:"" help:"Delete a user"`
+	Rename cmd.UserRename `cmd:"" help:"Rename a user"`
+	List   cmd.UserList   `cmd:"" default:"withargs" help:"List all users"`
+}
+
+type SessCmd struct {
+	Add    cmd.SessionAdd    `cmd:"" help:"Create a session (login)"`
+	Delete cmd.SessionDelete `cmd:"" help:"Delete sessions"`
+	List   cmd.SessionList   `cmd:"" default:"withargs" help:"List all sessions"`
+}
+
 func main() {
-	config, err := config.Load("")
-	if err != nil {
-		log.Fatal(err)
-	}
+	cmd.StaticFiles = staticFiles
 
-	logger := setupLogger(config.LogType, config.LogLevel)
-
-	db, err := repository.New(config.DBFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	done := make(chan os.Signal, 1)
-	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-
-	errCh := make(chan error, 1)
-	address := fmt.Sprintf("%s:%s", config.Host, config.Port)
-	go func() {
-		mux := http.NewServeMux()
-		middlewares := middleware.Chain(
-			middleware.WithLogger(logger),
-		)
-
-		mux.Handle("/static/", http.FileServer(http.FS(staticFiles)))
-
-		mux.HandleFunc("GET /{$}", handlers.Healthcheck)
-
-		mux.Handle("/verify", middlewares(handlers.Verify{}))
-		mux.Handle("GET /login", middlewares(handlers.Login{}))
-		mux.Handle("POST /login", middlewares(handlers.LoginSubmit{DB: db}))
-
-		// mux.Handle("GET /users", middlewares(handlers.UserList))
-		// mux.Handle("GET /users/new", middlewares(handlers.UserCreate))
-		// mux.Handle("POST /users/new", middlewares(handlers.UserCreateSubmit))
-		// mux.Handle("GET /users/{id}", middlewares(handlers.UserEdit))
-		// mux.Handle("POST /users/{id}", middlewares(handlers.UserEditSubmit))
-		// mux.Handle("DELETE /users/{id}", middlewares(handlers.UserDeleteSubmit))
-
-		if err := http.ListenAndServe(address, mux); err != nil {
-			logger.Error("Error starting the server", slog.Any("error", err))
-			errCh <- err
-		}
-	}()
-	logger.Info("Running bot http server", slog.String("address", address))
-
-	select {
-	case <-done:
-		logger.Info("Server closed")
-	case err := <-errCh:
-		log.Fatal(err)
-	}
-}
-
-func setupLogger(logType string, logLevel string) *slog.Logger {
-	var logger *slog.Logger
-	programLevel := new(slog.LevelVar)
-	programLevel.Set(strLogLevelToEnumValue(logLevel))
-	handlerOpts := &slog.HandlerOptions{Level: programLevel}
-	switch logType {
-	case "text":
-		logger = slog.New(slog.NewTextHandler(os.Stdout, handlerOpts))
-	case "json":
-		logger = slog.New((slog.NewJSONHandler(os.Stdout, handlerOpts)))
-	default:
-		log.Fatalf("Unknown logger type %s", logType)
-	}
-	return logger
-}
-
-func strLogLevelToEnumValue(logLevel string) slog.Level {
-	switch logLevel {
-	case "debug":
-		return slog.LevelDebug
-	case "info":
-		return slog.LevelInfo
-	case "warn":
-		return slog.LevelWarn
-	case "error":
-		return slog.LevelError
-	default:
-		log.Fatalf("Unexpected log level %s", logLevel)
-		return slog.LevelInfo
-	}
+	var cli CLI
+	ctx := kong.Parse(&cli,
+		kong.Name("auth_server"),
+		kong.Description("Authentication server"),
+		kong.UsageOnError(),
+	)
+	ctx.FatalIfErrorf(ctx.Run())
 }

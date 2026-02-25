@@ -107,7 +107,7 @@ func TestDeleteSession(t *testing.T) {
 	}
 }
 
-func TestDeleteAllSessionsForUser(t *testing.T) {
+func TestDeleteSessions_ByUser(t *testing.T) {
 	db := newTestDB(t)
 	userID := mustCreateUser(t, db)
 
@@ -118,16 +118,16 @@ func TestDeleteAllSessionsForUser(t *testing.T) {
 		t.Fatalf("CreateSession 2: %v", err)
 	}
 
-	n, err := sessions.DeleteAllSessionsForUser(*db, userID)
+	n, err := sessions.DeleteSessions(*db, sessions.Filter{Username: "testuser"})
 	if err != nil {
-		t.Fatalf("DeleteAllSessionsForUser: %v", err)
+		t.Fatalf("DeleteSessions: %v", err)
 	}
 	if n != 2 {
 		t.Fatalf("expected 2 deleted, got %d", n)
 	}
 }
 
-func TestDeleteAllSessionsIssuedBeforeTime(t *testing.T) {
+func TestDeleteSessions_ByCreatedBefore(t *testing.T) {
 	db := newTestDB(t)
 	userID := mustCreateUser(t, db)
 
@@ -136,9 +136,10 @@ func TestDeleteAllSessionsIssuedBeforeTime(t *testing.T) {
 	}
 
 	t.Run("cutoff before session creation", func(t *testing.T) {
-		n, err := sessions.DeleteAllSessionsIssuedBeforeTime(*db, time.Now().Add(-time.Hour))
+		cutoff := time.Now().Add(-time.Hour)
+		n, err := sessions.DeleteSessions(*db, sessions.Filter{CreatedBefore: &cutoff})
 		if err != nil {
-			t.Fatalf("DeleteAllSessionsIssuedBeforeTime: %v", err)
+			t.Fatalf("DeleteSessions: %v", err)
 		}
 		if n != 0 {
 			t.Fatalf("expected 0 deleted, got %d", n)
@@ -146,12 +147,21 @@ func TestDeleteAllSessionsIssuedBeforeTime(t *testing.T) {
 	})
 
 	t.Run("cutoff after session creation", func(t *testing.T) {
-		n, err := sessions.DeleteAllSessionsIssuedBeforeTime(*db, time.Now().Add(time.Minute))
+		cutoff := time.Now().Add(time.Minute)
+		n, err := sessions.DeleteSessions(*db, sessions.Filter{CreatedBefore: &cutoff})
 		if err != nil {
-			t.Fatalf("DeleteAllSessionsIssuedBeforeTime: %v", err)
+			t.Fatalf("DeleteSessions: %v", err)
 		}
 		if n != 1 {
 			t.Fatalf("expected 1 deleted, got %d", n)
 		}
 	})
+}
+
+func TestDeleteSessions_NoFilter(t *testing.T) {
+	db := newTestDB(t)
+	_, err := sessions.DeleteSessions(*db, sessions.Filter{})
+	if err == nil {
+		t.Fatal("expected error when no filter provided, got nil")
+	}
 }
