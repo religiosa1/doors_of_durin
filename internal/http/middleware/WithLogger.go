@@ -39,7 +39,8 @@ func WithLogger(logger *slog.Logger) Middleware {
 				slog.String("method", info.Method),
 				slog.String("scheme", info.Scheme),
 				slog.String("path", info.Path),
-				slog.String("host", info.Scheme),
+				slog.String("host", info.Host),
+				slog.String("original_uri", info.URI),
 				slog.String("remote_addr", info.IP),
 			)
 			t1 := time.Now()
