@@ -5,9 +5,7 @@ import (
 	"os"
 
 	"github.com/religiosa1/auth_server/internal/http/handlers"
-	"github.com/religiosa1/auth_server/internal/repository"
-	"github.com/religiosa1/auth_server/internal/repository/sessions"
-	"github.com/religiosa1/auth_server/internal/repository/users"
+	"github.com/religiosa1/auth_server/internal/service"
 )
 
 type SessionAdd struct {
@@ -42,31 +40,19 @@ func (s *SessionAdd) Run() error {
 		return fmt.Errorf("password cannot be empty")
 	}
 
-	_, db, err := loadConfigAndDB(s.Config)
+	cfg, db, err := loadConfigAndDB(s.Config)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
-
-	ok, err := users.CheckPassword(*db, username, password)
-	if err != nil {
-		if err == repository.ErrRecordNotFound {
-			return fmt.Errorf("user %q not found", username)
-		}
-		return err
-	}
-	if !ok {
-		return fmt.Errorf("wrong password for user %q", username)
+	authService := service.AuthService{
+		DB:         db,
+		SessionTTL: cfg.SessionTTL,
 	}
 
-	userID, err := users.GetUserID(*db, username)
+	sessionID, err := authService.Login(username, password)
 	if err != nil {
 		return err
-	}
-
-	sessionID, err := sessions.CreateSession(*db, userID)
-	if err != nil {
-		return fmt.Errorf("creating session: %w", err)
 	}
 
 	fmt.Println(sessionID)

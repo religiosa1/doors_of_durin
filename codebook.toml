@@ -2,4 +2,5 @@ words = [
     "authserver",
     "bodyclass",
     "tmpl",
+    "withargs",
 ]

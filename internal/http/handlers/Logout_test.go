@@ -5,10 +5,10 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
-	"time"
 
 	"github.com/religiosa1/auth_server/internal/http/handlers"
 	"github.com/religiosa1/auth_server/internal/repository/sessions"
+	"github.com/religiosa1/auth_server/internal/service"
 )
 
 func logoutRequest(sessionID string, backURL string) *http.Request {
@@ -27,7 +27,7 @@ func TestLogout_NoCookie(t *testing.T) {
 	db := newTestDB(t)
 
 	rr := httptest.NewRecorder()
-	handlers.Logout{DB: db}.ServeHTTP(rr, logoutRequest("", ""))
+	handlers.Logout{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, logoutRequest("", ""))
 
 	if rr.Code != http.StatusUnauthorized {
 		t.Fatalf("expected %d, got %d", http.StatusUnauthorized, rr.Code)
@@ -39,7 +39,7 @@ func TestLogout_ValidSession_RedirectsToRoot(t *testing.T) {
 	sessionID := createTestSession(t, db, "alice")
 
 	rr := httptest.NewRecorder()
-	handlers.Logout{DB: db}.ServeHTTP(rr, logoutRequest(sessionID, ""))
+	handlers.Logout{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, logoutRequest(sessionID, ""))
 
 	if rr.Code != http.StatusSeeOther {
 		t.Fatalf("expected %d, got %d", http.StatusSeeOther, rr.Code)
@@ -54,12 +54,12 @@ func TestLogout_ValidSession_DeletesSessionFromDB(t *testing.T) {
 	sessionID := createTestSession(t, db, "alice")
 
 	rr := httptest.NewRecorder()
-	handlers.Logout{DB: db}.ServeHTTP(rr, logoutRequest(sessionID, ""))
+	handlers.Logout{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, logoutRequest(sessionID, ""))
 
 	if rr.Code != http.StatusSeeOther {
 		t.Fatalf("expected %d, got %d", http.StatusSeeOther, rr.Code)
 	}
-	if _, err := sessions.GetSession(*db, sessionID, time.Time{}); err == nil {
+	if _, err := sessions.GetSession(*db, sessionID); err == nil {
 		t.Fatal("expected session to be deleted from DB, but it still exists")
 	}
 }
@@ -69,7 +69,7 @@ func TestLogout_ValidSession_ClearsCookie(t *testing.T) {
 	sessionID := createTestSession(t, db, "alice")
 
 	rr := httptest.NewRecorder()
-	handlers.Logout{DB: db}.ServeHTTP(rr, logoutRequest(sessionID, ""))
+	handlers.Logout{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, logoutRequest(sessionID, ""))
 
 	if rr.Code != http.StatusSeeOther {
 		t.Fatalf("expected %d, got %d", http.StatusSeeOther, rr.Code)
@@ -88,7 +88,7 @@ func TestLogout_WithBackURL(t *testing.T) {
 	sessionID := createTestSession(t, db, "alice")
 
 	rr := httptest.NewRecorder()
-	handlers.Logout{DB: db}.ServeHTTP(rr, logoutRequest(sessionID, "/goodbye"))
+	handlers.Logout{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, logoutRequest(sessionID, "/goodbye"))
 
 	if rr.Code != http.StatusSeeOther {
 		t.Fatalf("expected %d, got %d", http.StatusSeeOther, rr.Code)
@@ -102,7 +102,7 @@ func TestLogout_StaleSessionCookie_SucceedsAndClearsCookie(t *testing.T) {
 	db := newTestDB(t)
 
 	rr := httptest.NewRecorder()
-	handlers.Logout{DB: db}.ServeHTTP(rr, logoutRequest("01JMVNP7HZE8Q3K5X2WRT4Y6BD", ""))
+	handlers.Logout{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, logoutRequest("01JMVNP7HZE8Q3K5X2WRT4Y6BD", ""))
 
 	if rr.Code != http.StatusSeeOther {
 		t.Fatalf("expected %d, got %d", http.StatusSeeOther, rr.Code)

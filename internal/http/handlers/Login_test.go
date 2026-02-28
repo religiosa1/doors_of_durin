@@ -14,6 +14,7 @@ import (
 	"github.com/religiosa1/auth_server/internal/repository"
 	"github.com/religiosa1/auth_server/internal/repository/sessions"
 	"github.com/religiosa1/auth_server/internal/repository/users"
+	"github.com/religiosa1/auth_server/internal/service"
 )
 
 func newTestDB(t *testing.T) *repository.DB {
@@ -70,7 +71,7 @@ func TestLoginSubmit_CSRF_MissingCookie(t *testing.T) {
 	// no CSRF cookie added
 
 	rr := httptest.NewRecorder()
-	handlers.LoginSubmit{DB: db}.ServeHTTP(rr, req)
+	handlers.LoginSubmit{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("expected %d, got %d", http.StatusForbidden, rr.Code)
@@ -93,7 +94,7 @@ func TestLoginSubmit_CSRF_MissingFormField(t *testing.T) {
 	req.AddCookie(&http.Cookie{Name: csrf.CookieName, Value: csrfToken})
 
 	rr := httptest.NewRecorder()
-	handlers.LoginSubmit{DB: db}.ServeHTTP(rr, req)
+	handlers.LoginSubmit{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("expected %d, got %d", http.StatusForbidden, rr.Code)
@@ -117,7 +118,7 @@ func TestLoginSubmit_CSRF_TokenMismatch(t *testing.T) {
 	req.AddCookie(&http.Cookie{Name: csrf.CookieName, Value: cookieToken})
 
 	rr := httptest.NewRecorder()
-	handlers.LoginSubmit{DB: db}.ServeHTTP(rr, req)
+	handlers.LoginSubmit{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("expected %d, got %d", http.StatusForbidden, rr.Code)
@@ -131,7 +132,7 @@ func TestLoginSubmit_Success_NoRedirectTo(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handlers.LoginSubmit{DB: db}.ServeHTTP(rr, loginRequest(t, "alice", "secret", ""))
+	handlers.LoginSubmit{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, loginRequest(t, "alice", "secret", ""))
 
 	if rr.Code != http.StatusSeeOther {
 		t.Fatalf("expected status %d, got %d", http.StatusSeeOther, rr.Code)
@@ -144,7 +145,7 @@ func TestLoginSubmit_Success_NoRedirectTo(t *testing.T) {
 	if cookie == nil {
 		t.Fatal("expected session_id cookie to be set")
 	}
-	if _, err := sessions.GetSession(*db, cookie.Value, time.Time{}); err != nil {
+	if _, err := sessions.GetSession(*db, cookie.Value); err != nil {
 		t.Fatalf("session not found in DB: %v", err)
 	}
 }
@@ -156,7 +157,7 @@ func TestLoginSubmit_Success_WithRedirectTo(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handlers.LoginSubmit{DB: db}.ServeHTTP(rr, loginRequest(t, "alice", "secret", "/dashboard"))
+	handlers.LoginSubmit{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, loginRequest(t, "alice", "secret", "/dashboard"))
 
 	if rr.Code != http.StatusSeeOther {
 		t.Fatalf("expected status %d, got %d", http.StatusSeeOther, rr.Code)
@@ -169,7 +170,7 @@ func TestLoginSubmit_Success_WithRedirectTo(t *testing.T) {
 	if cookie == nil {
 		t.Fatal("expected session_id cookie to be set")
 	}
-	if _, err := sessions.GetSession(*db, cookie.Value, time.Time{}); err != nil {
+	if _, err := sessions.GetSession(*db, cookie.Value); err != nil {
 		t.Fatalf("session not found in DB: %v", err)
 	}
 }
@@ -181,7 +182,7 @@ func TestLoginSubmit_WrongPassword(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handlers.LoginSubmit{DB: db}.ServeHTTP(rr, loginRequest(t, "alice", "wrong", ""))
+	handlers.LoginSubmit{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, loginRequest(t, "alice", "wrong", ""))
 
 	if rr.Code != http.StatusUnauthorized {
 		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, rr.Code)
@@ -195,7 +196,7 @@ func TestLoginSubmit_UnknownUser(t *testing.T) {
 	db := newTestDB(t)
 
 	rr := httptest.NewRecorder()
-	handlers.LoginSubmit{DB: db}.ServeHTTP(rr, loginRequest(t, "nobody", "password", ""))
+	handlers.LoginSubmit{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, loginRequest(t, "nobody", "password", ""))
 
 	if rr.Code != http.StatusUnauthorized {
 		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, rr.Code)
@@ -212,7 +213,7 @@ func TestLoginSubmit_RateLimit_BlocksAfterThreshold(t *testing.T) {
 	}
 
 	limiter := ratelimit.New(ratelimit.Config{MaxAttempts: 3, Window: time.Minute, FailDelay: 0})
-	h := handlers.LoginSubmit{DB: db, Limiter: limiter}
+	h := handlers.LoginSubmit{AuthService: service.AuthService{DB: db}, Limiter: limiter}
 
 	for i := 0; i < 3; i++ {
 		rr := httptest.NewRecorder()
@@ -236,7 +237,7 @@ func TestLoginSubmit_RateLimit_SuccessDoesNotIncrement(t *testing.T) {
 	}
 
 	limiter := ratelimit.New(ratelimit.Config{MaxAttempts: 1, Window: time.Minute, FailDelay: 0})
-	h := handlers.LoginSubmit{DB: db, Limiter: limiter}
+	h := handlers.LoginSubmit{AuthService: service.AuthService{DB: db}, Limiter: limiter}
 
 	for i := 0; i < 3; i++ {
 		rr := httptest.NewRecorder()
@@ -252,7 +253,7 @@ func TestLoginSubmit_FailDelay(t *testing.T) {
 
 	const delay = 20 * time.Millisecond
 	limiter := ratelimit.New(ratelimit.Config{MaxAttempts: 100, Window: time.Minute, FailDelay: delay})
-	h := handlers.LoginSubmit{DB: db, Limiter: limiter}
+	h := handlers.LoginSubmit{AuthService: service.AuthService{DB: db}, Limiter: limiter}
 
 	start := time.Now()
 	rr := httptest.NewRecorder()

@@ -13,6 +13,7 @@ import (
 	handlers "github.com/religiosa1/auth_server/internal/http/handlers"
 	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
 	"github.com/religiosa1/auth_server/internal/ratelimit"
+	"github.com/religiosa1/auth_server/internal/service"
 )
 
 var StaticFiles embed.FS
@@ -51,15 +52,19 @@ func (s *Serve) Run() error {
 		middlewares := middleware.Chain(
 			middleware.WithLogger(logger),
 		)
+		authService := service.AuthService{
+			DB:         db,
+			SessionTTL: cfg.SessionTTL,
+		}
 
 		mux.Handle("/static/", http.FileServer(http.FS(StaticFiles)))
 
 		mux.HandleFunc("GET /{$}", handlers.Healthcheck)
 
-		mux.Handle("/verify", middlewares(handlers.Verify{DB: db, SessionTTL: cfg.SessionTTL}))
+		mux.Handle("/verify", middlewares(handlers.Verify{AuthService: authService}))
 		mux.Handle("GET /login", middlewares(handlers.Login{}))
-		mux.Handle("POST /login", middlewares(handlers.LoginSubmit{DB: db, Limiter: limiter, SessionTTL: cfg.SessionTTL}))
-		mux.Handle("POST /logout", middlewares(handlers.Logout{DB: db}))
+		mux.Handle("POST /login", middlewares(handlers.LoginSubmit{AuthService: authService, Limiter: limiter, SessionTTL: cfg.SessionTTL}))
+		mux.Handle("POST /logout", middlewares(handlers.Logout{AuthService: authService}))
 
 		if err := http.ListenAndServe(address, mux); err != nil {
 			logger.Error("Error starting the server", slog.Any("error", err))
@@ -108,4 +113,3 @@ func strLogLevelToEnumValue(logLevel string) slog.Level {
 		return slog.LevelInfo
 	}
 }
-

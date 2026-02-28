@@ -4,16 +4,13 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"time"
 
 	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
-	"github.com/religiosa1/auth_server/internal/repository"
-	"github.com/religiosa1/auth_server/internal/repository/sessions"
+	"github.com/religiosa1/auth_server/internal/service"
 )
 
 type Verify struct {
-	DB         *repository.DB
-	SessionTTL time.Duration
+	AuthService service.AuthService
 }
 
 func (v Verify) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -25,26 +22,17 @@ func (v Verify) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var notBefore time.Time
-	if v.SessionTTL > 0 {
-		notBefore = time.Now().Add(-v.SessionTTL)
-	}
-
-	session, err := sessions.GetSession(*v.DB, cookie.Value, notBefore)
+	username, err := v.AuthService.CheckAuth(cookie.Value)
 	if err != nil {
-		if errors.Is(err, repository.ErrRecordNotFound) {
+		if errors.Is(err, service.ErrSessionNotFound) || errors.Is(err, service.ErrSessionExpired) {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
-		logger.Error("error checking session", slog.Any("error", err))
+		logger.Error("unexpected error", slog.Any("error", err))
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	if err := sessions.RegisterSessionUsage(*v.DB, cookie.Value); err != nil {
-		logger.Error("error registering session usage", slog.Any("error", err))
-	}
-
-	w.Header().Set("X-Auth-User", session.Username)
+	w.Header().Set("X-Auth-User", username)
 	w.WriteHeader(http.StatusOK)
 }

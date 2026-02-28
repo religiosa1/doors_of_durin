@@ -55,7 +55,7 @@ func TestGetSession(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateSession: %v", err)
 	}
-	session, err := sessions.GetSession(*db, sessionID, time.Time{})
+	session, err := sessions.GetSession(*db, sessionID)
 	if err != nil {
 		t.Fatalf("GetSession: %v", err)
 	}
@@ -69,25 +69,9 @@ func TestGetSession(t *testing.T) {
 
 func TestGetSession_NotFound(t *testing.T) {
 	db := newTestDB(t)
-	_, err := sessions.GetSession(*db, "nonexistent", time.Time{})
+	_, err := sessions.GetSession(*db, "nonexistent")
 	if !errors.Is(err, repository.ErrRecordNotFound) {
 		t.Fatalf("expected ErrRecordNotFound, got %v", err)
-	}
-}
-
-func TestGetSession_Expired(t *testing.T) {
-	db := newTestDB(t)
-	userID := mustCreateUser(t, db)
-
-	sessionID, err := sessions.CreateSession(*db, userID)
-	if err != nil {
-		t.Fatalf("CreateSession: %v", err)
-	}
-	// notBefore set to 1 minute in the future — session appears expired
-	notBefore := time.Now().Add(time.Minute)
-	_, err = sessions.GetSession(*db, sessionID, notBefore)
-	if !errors.Is(err, repository.ErrRecordNotFound) {
-		t.Fatalf("expected ErrRecordNotFound for expired session, got %v", err)
 	}
 }
 
@@ -124,7 +108,7 @@ func TestDeleteSession(t *testing.T) {
 	if err := sessions.DeleteSession(*db, sessionID); err != nil {
 		t.Fatalf("DeleteSession: %v", err)
 	}
-	_, err = sessions.GetSession(*db, sessionID, time.Time{})
+	_, err = sessions.GetSession(*db, sessionID)
 	if !errors.Is(err, repository.ErrRecordNotFound) {
 		t.Fatalf("expected session to be gone, got %v", err)
 	}

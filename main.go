@@ -11,8 +11,8 @@ import (
 var staticFiles embed.FS
 
 type CLI struct {
-	User    UserCmd  `cmd:"" help:"Manage users"`
-	Session SessCmd  `cmd:"" help:"Manage sessions"`
+	User    UserCmd   `cmd:"" help:"Manage users"`
+	Session SessCmd   `cmd:"" help:"Manage sessions"`
 	Serve   cmd.Serve `cmd:"" default:"withargs" help:"Run HTTP server"`
 }
 

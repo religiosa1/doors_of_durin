@@ -4,6 +4,7 @@ package sessions
 import (
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -11,22 +12,15 @@ import (
 )
 
 // GetSession returns the session with the given ID, joining the users table to
-// include the username. If notBefore is non-zero, sessions whose activity
-// timestamp (COALESCE(last_used_at, created_at)) predates it are treated as
-// expired and return repository.ErrRecordNotFound.
-func GetSession(db repository.DB, sessionID string, notBefore time.Time) (Session, error) {
+// include the username.
+func GetSession(db repository.DB, sessionID string) (Session, error) {
 	query := `
 		SELECT s.id, u.name AS username, s.created_at, s.last_used_at
 		FROM sessions s
 		JOIN users u ON u.id = s.user_id
 		WHERE s.id = ?`
-	args := []any{sessionID}
-	if !notBefore.IsZero() {
-		query += " AND COALESCE(s.last_used_at, s.created_at) >= ?"
-		args = append(args, notBefore.UTC().Format("2006-01-02 15:04:05"))
-	}
 	var session Session
-	err := db.DB.Get(&session, query, args...)
+	err := db.DB.Get(&session, query, sessionID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return session, repository.ErrRecordNotFound
 	}
@@ -46,15 +40,16 @@ func CreateSession(db repository.DB, userID int64) (string, error) {
 }
 
 func DeleteSession(db repository.DB, sessionID string) error {
+	// notice, delete doesn't return ErrNoRows -- we don't indicate whether it was deleted or not here
 	_, err := db.DB.Exec("DELETE FROM `sessions` WHERE id = ?", sessionID)
 	return err
 }
 
 type Session struct {
-	ID          string     `db:"id"           json:"id"`
-	Username    string     `db:"username"     json:"username"`
-	CreatedAt   time.Time  `db:"created_at"   json:"createdAt"`
-	LastUsedAt  *time.Time `db:"last_used_at" json:"lastUsedAt"`
+	ID         string     `db:"id"           json:"id"`
+	Username   string     `db:"username"     json:"username"`
+	CreatedAt  time.Time  `db:"created_at"   json:"createdAt"`
+	LastUsedAt *time.Time `db:"last_used_at" json:"lastUsedAt"`
 }
 
 type Filter struct {
@@ -90,15 +85,7 @@ func List(db repository.DB, filter Filter) ([]Session, error) {
 	query := `
 		SELECT s.id, u.name AS username, s.created_at, s.last_used_at
 		FROM sessions s
-		JOIN users u ON u.id = s.user_id`
-	for i, c := range conds {
-		if i == 0 {
-			query += " WHERE " + c
-		} else {
-			query += " AND " + c
-		}
-	}
-	query += " ORDER BY s.created_at DESC"
+		JOIN users u ON u.id = s.user_id` + whereClause(conds) + " ORDER BY s.created_at DESC"
 
 	var result []Session
 	err := db.DB.Select(&result, query, args...)
@@ -126,18 +113,26 @@ func DeleteSessions(db repository.DB, filter Filter) (int64, error) {
 		args = append(args, filter.LastUsedBefore.UTC().Format("2006-01-02 15:04:05"))
 	}
 
-	query := "DELETE FROM `sessions`"
-	for i, c := range conds {
-		if i == 0 {
-			query += " WHERE " + c
-		} else {
-			query += " AND " + c
-		}
-	}
+	query := "DELETE FROM `sessions`" + whereClause(conds)
 
 	result, err := db.DB.Exec(query, args...)
 	if err != nil {
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+func whereClause(conds []string) string {
+	if len(conds) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString(" WHERE ")
+	for i, c := range conds {
+		if i > 0 {
+			sb.WriteString(" AND ")
+		}
+		sb.WriteString(c)
+	}
+	return sb.String()
 }

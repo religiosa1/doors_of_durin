@@ -11,6 +11,7 @@ import (
 	"github.com/religiosa1/auth_server/internal/repository"
 	"github.com/religiosa1/auth_server/internal/repository/sessions"
 	"github.com/religiosa1/auth_server/internal/repository/users"
+	"github.com/religiosa1/auth_server/internal/service"
 )
 
 func verifyRequest(sessionID string) *http.Request {
@@ -56,7 +57,7 @@ func TestVerify_ValidSession(t *testing.T) {
 	sessionID := createTestSession(t, db, "alice")
 
 	rr := httptest.NewRecorder()
-	handlers.Verify{DB: db, SessionTTL: time.Hour}.ServeHTTP(rr, verifyRequest(sessionID))
+	handlers.Verify{AuthService: service.AuthService{DB: db, SessionTTL: time.Hour}}.ServeHTTP(rr, verifyRequest(sessionID))
 
 	if rr.Code != http.StatusOK {
 		t.Fatalf("expected %d, got %d", http.StatusOK, rr.Code)
@@ -70,7 +71,7 @@ func TestVerify_NoCookie(t *testing.T) {
 	db := newTestDB(t)
 
 	rr := httptest.NewRecorder()
-	handlers.Verify{DB: db, SessionTTL: time.Hour}.ServeHTTP(rr, verifyRequest(""))
+	handlers.Verify{AuthService: service.AuthService{DB: db, SessionTTL: time.Hour}}.ServeHTTP(rr, verifyRequest(""))
 
 	if rr.Code != http.StatusUnauthorized {
 		t.Fatalf("expected %d, got %d", http.StatusUnauthorized, rr.Code)
@@ -81,7 +82,7 @@ func TestVerify_SessionNotInDB(t *testing.T) {
 	db := newTestDB(t)
 
 	rr := httptest.NewRecorder()
-	handlers.Verify{DB: db, SessionTTL: time.Hour}.ServeHTTP(rr, verifyRequest("01JMVNP7HZE8Q3K5X2WRT4Y6BD"))
+	handlers.Verify{AuthService: service.AuthService{DB: db, SessionTTL: time.Hour}}.ServeHTTP(rr, verifyRequest("01JMVNP7HZE8Q3K5X2WRT4Y6BD"))
 
 	if rr.Code != http.StatusUnauthorized {
 		t.Fatalf("expected %d, got %d", http.StatusUnauthorized, rr.Code)
@@ -92,7 +93,7 @@ func TestVerify_MalformedCookieValue(t *testing.T) {
 	db := newTestDB(t)
 
 	rr := httptest.NewRecorder()
-	handlers.Verify{DB: db, SessionTTL: time.Hour}.ServeHTTP(rr, verifyRequest("not-a-valid-session-id"))
+	handlers.Verify{AuthService: service.AuthService{DB: db, SessionTTL: time.Hour}}.ServeHTTP(rr, verifyRequest("not-a-valid-session-id"))
 
 	if rr.Code != http.StatusUnauthorized {
 		t.Fatalf("expected %d, got %d", http.StatusUnauthorized, rr.Code)
@@ -105,7 +106,7 @@ func TestVerify_ExpiredSession(t *testing.T) {
 	backdateSession(t, db, sessionID, 2*time.Hour)
 
 	rr := httptest.NewRecorder()
-	handlers.Verify{DB: db, SessionTTL: time.Hour}.ServeHTTP(rr, verifyRequest(sessionID))
+	handlers.Verify{AuthService: service.AuthService{DB: db, SessionTTL: time.Hour}}.ServeHTTP(rr, verifyRequest(sessionID))
 
 	if rr.Code != http.StatusUnauthorized {
 		t.Fatalf("expected %d, got %d", http.StatusUnauthorized, rr.Code)
@@ -118,7 +119,7 @@ func TestVerify_LastUsedAtBumped(t *testing.T) {
 
 	before := time.Now()
 	rr := httptest.NewRecorder()
-	handlers.Verify{DB: db, SessionTTL: time.Hour}.ServeHTTP(rr, verifyRequest(sessionID))
+	handlers.Verify{AuthService: service.AuthService{DB: db, SessionTTL: time.Hour}}.ServeHTTP(rr, verifyRequest(sessionID))
 
 	if rr.Code != http.StatusOK {
 		t.Fatalf("expected %d, got %d", http.StatusOK, rr.Code)

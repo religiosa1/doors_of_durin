@@ -9,9 +9,7 @@ import (
 	"github.com/religiosa1/auth_server/internal/csrf"
 	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
 	"github.com/religiosa1/auth_server/internal/ratelimit"
-	"github.com/religiosa1/auth_server/internal/repository"
-	"github.com/religiosa1/auth_server/internal/repository/sessions"
-	"github.com/religiosa1/auth_server/internal/repository/users"
+	"github.com/religiosa1/auth_server/internal/service"
 	views "github.com/religiosa1/auth_server/internal/views"
 )
 
@@ -42,9 +40,9 @@ func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type LoginSubmit struct {
-	DB         *repository.DB
-	Limiter    *ratelimit.Limiter
-	SessionTTL time.Duration
+	AuthService service.AuthService
+	Limiter     *ratelimit.Limiter
+	SessionTTL  time.Duration
 }
 
 func (l LoginSubmit) recordFailure(r *http.Request) {
@@ -102,33 +100,14 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	ok, err := users.CheckPassword(*l.DB, username, password)
+	sessionID, err := l.AuthService.Login(username, password)
 	if err != nil {
-		if errors.Is(err, repository.ErrRecordNotFound) {
+		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrWrongPassword) {
 			l.recordFailure(r)
 			renderUnauthorized()
 			return
 		}
-		logger.Error("error checking password", slog.Any("error", err))
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-	if !ok {
-		l.recordFailure(r)
-		renderUnauthorized()
-		return
-	}
-
-	userID, err := users.GetUserID(*l.DB, username)
-	if err != nil {
-		logger.Error("error getting user ID after successful auth", slog.String("username", username), slog.Any("error", err))
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	sessionID, err := sessions.CreateSession(*l.DB, userID)
-	if err != nil {
-		logger.Error("error creating session", slog.Any("error", err))
+		logger.Error("error checking password", slog.String("username", username), slog.Any("error", err))
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

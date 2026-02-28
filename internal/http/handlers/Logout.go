@@ -1,17 +1,15 @@
 package handlers
 
 import (
-	"errors"
 	"log/slog"
 	"net/http"
 
 	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
-	"github.com/religiosa1/auth_server/internal/repository"
-	"github.com/religiosa1/auth_server/internal/repository/sessions"
+	"github.com/religiosa1/auth_server/internal/service"
 )
 
 type Logout struct {
-	DB *repository.DB
+	AuthService service.AuthService
 }
 
 func (l Logout) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +21,8 @@ func (l Logout) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := sessions.DeleteSession(*l.DB, cookie.Value); err != nil && !errors.Is(err, repository.ErrRecordNotFound) {
+	err = l.AuthService.Logout(cookie.Value)
+	if err != nil {
 		logger.Error("error deleting session", slog.Any("error", err))
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
