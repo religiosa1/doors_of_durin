@@ -6,6 +6,18 @@ small and manually controlled list of users -- basically your family members.
 
 If you're looking for a full-featured, production scale one look at [Authelia](https://www.authelia.com/).
 
+Can also work behind [traefik](https://traefik.io/) or [caddy](https://caddyserver.com/).
+
+## Features
+
+- lightweight, minimal dependency, single-binary distribution
+- ULID-based session authentication
+- full structured logging for everything
+- WAL-mode sqlite with hashed passwords -- once written, cannot be decoded back
+- rate-limiting by IP for the login endpoint against brute-force attacks
+- CSRF protection on the login endpoint
+- CLI for user and session management
+
 ## How it works
 
 Stores a list of users and their passwords in a local
@@ -18,17 +30,15 @@ returns either 200 or 401 status based on the presence and validity of the
 session id cookie. On a 200 response it sets an `X-Auth-User` header containing
 the authenticated username, which can be forwarded to the upstream application.
 
-On 401 responses, users may be redirected in nginx to the `/login` page,
+On 401 responses, users should be redirected by nginx to the `/login` page,
 which will allow user to enter their login/password and will set the session id
-cookie.
+cookie. Supplying back_url query param will allow users to be redirected back
+to the target page after a login (see [nginx config example](#nginx-configuration-example)).
 
 `POST /logout` deletes the session from the database and clears the session
 cookie. It accepts an optional `back_url` query parameter to redirect the user
 after logout; if omitted, the user is redirected to `/`. Returns 401 if no
 session cookie is present in the request.
-
-`/users` series of pages provides basic CRUD for admins, to manage users roles
-and permissions.
 
 No Web-UI for registration or password restore as it's assumed list of users
 is small enough for manual management.
@@ -66,10 +76,12 @@ Run "auth_server <command> --help" for more information on a command.
 
 ### To Do in future iterations:
 
+User list web CRUD, currently managed only through the CLI.
+
 Perform some basic monitoring and alerting if the traffic to the services
 exceeds some predefined values.
 
-## What to forward:
+## What to forward from HTTP:
 
 ```
 Scheme Detection:
@@ -97,9 +109,9 @@ Remote IP:
 
       # Forwarding headers sent to all upstream requests
       # this is required for correct identification in auth server
-      proxy_set_header X-Forwarded-URI $request_uri;
       proxy_set_header X-Forwarded-Proto $scheme;
       proxy_set_header X-Forwarded-Host $http_host;
+      proxy_set_header X-Forwarded-URI $request_uri;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
       # Internal auth subrequest
@@ -134,7 +146,7 @@ Remote IP:
   }
 ```
 
-See the example nginx configuration file in [nginx/nginx.conf](./nginx/nginx.conf)
+See a more detailed example of nginx configuration file in [nginx/nginx.conf](./nginx/nginx.conf)
 
 ## Working with the source-code locally.
 
