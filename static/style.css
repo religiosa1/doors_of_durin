@@ -83,7 +83,7 @@ body.login {
 	/* Cicada-principle rock texture: three prime-sized seamless tiles (97 × 131 × 211 px).
 	   Visual repeat period = 2,681,677 px — imperceptible.
 	   Gate SVG lives in ::before so we can filter it per colour-scheme. */
-	background-image: url("/static/rock_97.svg"), url("/static/rock_131.svg"), url("/static/rock_211.svg");
+	background-image: url("rock_97.svg"), url("rock_131.svg"), url("rock_211.svg");
 	background-position:
 		0 0,
 		0 0,
@@ -100,7 +100,7 @@ body.login::before {
 	content: "";
 	position: fixed;
 	inset: 5%;
-	background-image: url("/static/doors_of_durin.svg");
+	background-image: url("doors_of_durin.svg");
 	background-position: center center;
 	background-repeat: no-repeat;
 	background-size: contain;

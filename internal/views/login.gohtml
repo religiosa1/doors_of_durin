@@ -4,7 +4,7 @@
 {{define "content"}}
 <div class="form">
   <h1>Authorization Required</h1>
-  <form method="post" action="/login">
+  <form method="post" action="{{.LoginAction}}">
     <label class="form-group">
       <span class="form-group__label">Username</span>
       <input class="form-group__input" name="username" type="text" autocomplete="username" required>

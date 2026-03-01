@@ -76,13 +76,13 @@ Scheme Detection:
   Default: X-Forwarded-Proto (header)
   Fallback: TLS (listening socket state)
 
-Host Detection:
-  Default: X-Forwarded-Host (header)
-  Fallback: Host (header)
-
 Path Detection:
   Default: X-Forwarded-URI (header)
   Fallback: Start Line Request Target (start line)
+
+Host Detection:
+  Default: X-Forwarded-Host (header)
+  Fallback: Host (header)
 
 Remote IP:
   Default: X-Forwarded-For
@@ -92,52 +92,49 @@ Remote IP:
 ## Nginx configuration example
 
 ```
-server {
-    listen 80;
-    server_name example.com;
+  server {
+      listen 80;
 
-    proxy_set_header X-Original-URL $scheme://$http_host$request_uri;
-    proxy_set_header X-Forwarded-URI $request_uri;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Original-Method $request_method;
-    proxy_set_header X-Forwarded-Host $http_host;
-    proxy_set_header X-Forwarded-Ssl on;
-    proxy_set_header X-Forwarded-For $remote_addr;
-    proxy_set_header X-Real-IP $remote_addr;
+      # Forwarding headers sent to all upstream requests
+      # this is required for correct identification in auth server
+      proxy_set_header X-Forwarded-URI $request_uri;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Forwarded-Host $http_host;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
-    # The main app — protected by auth_request
-    location / {
-        auth_request /auth;
-        auth_request_set $auth_status $upstream_status;
-        auth_request_set $auth_user $upstream_http_x_auth_user;
-        proxy_set_header X-Auth-User $auth_user;
+      # Internal auth subrequest
+      location = /auth-check {
+          internal;
+          proxy_pass http://auth:4000/verify;
+          proxy_pass_request_body off;
+          proxy_set_header Content-Length "";
+      }
 
-        # On auth failure, show the login page
-        error_page 401 = @login;
+      # Redirect unauthenticated requests to the auth server login page
+      location @login {
+          # Scheme and host part are required if you're serving on a non-standard port
+          return 302 $scheme://$http_host/auth/login?redirect_to=$request_uri;
+      }
 
-        proxy_pass http://some-backend-app:3000;
-    }
+      # All auth server endpoints: login, logout, static assets
+      # This must be supplied in auth server configuration, e.g. as an env:
+      # URL_PREFIX: "/auth"
+      location /auth/ {
+          proxy_pass http://auth:4000/;
+      }
 
-    # Internal subrequest to auth service
-    location = /auth {
-        internal;
-        proxy_pass http://auth-service:4000/verify;
-
-        proxy_pass_request_body off;
-        proxy_set_header Content-Length "";
-    }
-
-    # Named location: shows the login form on 401
-    location @login {
-        proxy_pass http://auth-service:4000/login;
-    }
-
-    # Direct access to auth endpoints (login form submission, logout, etc.)
-    location /auth/ {
-        proxy_pass http://auth-service:4000/;
-    }
-}
+      # Protected reverse-proxied backend app
+      location /app/ {
+          auth_request /auth-check;
+          error_page 401 = @login;
+          auth_request_set $auth_user $upstream_http_x_auth_user;
+          proxy_set_header X-Auth-User $auth_user;
+          proxy_pass http://backend/;
+      }
+  }
 ```
+
+See the example nginx configuration file in [nginx/nginx.conf](./nginx/nginx.conf)
 
 ## Working with the source-code locally.
 
@@ -146,6 +143,7 @@ This project uses [mise-en-place](https://mise.jdx.dev/) for tooling management 
 Once you have mise installed, run:
 
 ```sh
+mise trust
 mise install # only once, after the initial clone
 ```
 

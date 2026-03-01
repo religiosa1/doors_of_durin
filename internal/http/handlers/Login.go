@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/religiosa1/auth_server/internal/csrf"
@@ -14,12 +15,31 @@ import (
 )
 
 type loginData struct {
-	RedirectTo string
-	Error      string
-	CSRFToken  string
+	StaticURL   string
+	LoginAction string
+	RedirectTo  string
+	Error       string
+	CSRFToken   string
 }
 
-type Login struct{}
+// prefixedPath returns a relative path when prefix is empty, or an absolute
+// prefixed path otherwise. Templates rely on this to work both standalone
+// (no prefix → relative refs) and behind a reverse proxy (prefix → absolute).
+func prefixedPath(prefix, path string) string {
+	if prefix == "" {
+		return path
+	}
+	jp, err := url.JoinPath(prefix, path)
+	// probably an overkill, but why not
+	if err != nil {
+		return path
+	}
+	return jp
+}
+
+type Login struct {
+	URLPrefix string
+}
 
 func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logger := middleware.GetLogger(r.Context())
@@ -30,9 +50,15 @@ func (l Login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	csrf.SetCookie(w, csrfToken)
+	redirectTo := r.URL.Query().Get("redirect_to")
+	if redirectTo == "" {
+		redirectTo = middleware.GetRequestInfo(r.Context()).OriginalURL()
+	}
 	data := loginData{
-		RedirectTo: middleware.GetRequestInfo(r.Context()).OriginalURL(),
-		CSRFToken:  csrfToken,
+		StaticURL:   prefixedPath(l.URLPrefix, "static"),
+		LoginAction: prefixedPath(l.URLPrefix, "login"),
+		RedirectTo:  redirectTo,
+		CSRFToken:   csrfToken,
 	}
 	if err := views.Render(w, "login.gohtml", data); err != nil {
 		logger.Error("failed to render login page", slog.Any("error", err))
@@ -43,6 +69,7 @@ type LoginSubmit struct {
 	AuthService service.AuthService
 	Limiter     *ratelimit.Limiter
 	SessionTTL  time.Duration
+	URLPrefix   string
 }
 
 func (l LoginSubmit) recordFailure(r *http.Request) {
@@ -90,9 +117,11 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		csrf.SetCookie(w, newToken)
 		data := loginData{
-			RedirectTo: redirectTo,
-			Error:      "Invalid username or password",
-			CSRFToken:  newToken,
+			StaticURL:   prefixedPath(l.URLPrefix, "static"),
+			LoginAction: prefixedPath(l.URLPrefix, "login"),
+			RedirectTo:  redirectTo,
+			Error:       "Invalid username or password",
+			CSRFToken:   newToken,
 		}
 		w.WriteHeader(http.StatusUnauthorized)
 		if err := views.Render(w, "login.gohtml", data); err != nil {
