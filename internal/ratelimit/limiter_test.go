@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/religiosa1/auth_server/internal/ratelimit"
+	"github.com/religiosa1/doors_of_durin/internal/ratelimit"
 )
 
 func fixedClock(t time.Time) func() time.Time {

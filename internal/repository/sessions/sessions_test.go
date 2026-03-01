@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/religiosa1/auth_server/internal/repository"
-	"github.com/religiosa1/auth_server/internal/repository/sessions"
+	"github.com/religiosa1/doors_of_durin/internal/repository"
+	"github.com/religiosa1/doors_of_durin/internal/repository/sessions"
 )
 
 func newTestDB(t *testing.T) *repository.DB {

@@ -1,4 +1,4 @@
-module github.com/religiosa1/auth_server
+module github.com/religiosa1/doors_of_durin
 
 go 1.24.0
 

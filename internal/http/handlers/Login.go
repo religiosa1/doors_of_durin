@@ -7,11 +7,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/religiosa1/auth_server/internal/csrf"
-	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
-	"github.com/religiosa1/auth_server/internal/ratelimit"
-	"github.com/religiosa1/auth_server/internal/service"
-	views "github.com/religiosa1/auth_server/internal/views"
+	"github.com/religiosa1/doors_of_durin/internal/csrf"
+	middleware "github.com/religiosa1/doors_of_durin/internal/http/middleware"
+	"github.com/religiosa1/doors_of_durin/internal/ratelimit"
+	"github.com/religiosa1/doors_of_durin/internal/service"
+	views "github.com/religiosa1/doors_of_durin/internal/views"
 )
 
 type loginData struct {

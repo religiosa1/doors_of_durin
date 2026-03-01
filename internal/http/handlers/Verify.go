@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
-	"github.com/religiosa1/auth_server/internal/service"
+	middleware "github.com/religiosa1/doors_of_durin/internal/http/middleware"
+	"github.com/religiosa1/doors_of_durin/internal/service"
 )
 
 type Verify struct {

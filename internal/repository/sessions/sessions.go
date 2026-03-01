@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/religiosa1/auth_server/internal/repository"
+	"github.com/religiosa1/doors_of_durin/internal/repository"
 )
 
 // GetSession returns the session with the given ID, joining the users table to

@@ -9,7 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	sqlite3 "github.com/mattn/go-sqlite3"
-	"github.com/religiosa1/auth_server/internal/repository"
+	"github.com/religiosa1/doors_of_durin/internal/repository"
 )
 
 type User struct {

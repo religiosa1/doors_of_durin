@@ -1,4 +1,4 @@
-# Simple auth server
+# Doors of Durin
 
 A simple golang auth server, intended to be used with nginx [auth_request](https://nginx.org/en/docs/http/ngx_http_auth_request_module.html)
 to cover with basic-like authorization some of the self-hosted services with a
@@ -15,6 +15,7 @@ Can also work behind [traefik](https://traefik.io/) or [caddy](https://caddyserv
 - full structured logging for everything
 - WAL-mode sqlite with hashed passwords -- once written, cannot be decoded back
 - rate-limiting by IP for the login endpoint against brute-force attacks
+- small sleep on failed login attempts to make targeted users attacks more difficult
 - CSRF protection on the login endpoint
 - CLI for user and session management
 
@@ -71,7 +72,7 @@ Commands:
   serve [flags]
     Run HTTP server
 
-Run "auth_server <command> --help" for more information on a command.
+Run "durin <command> --help" for more information on a command.
 ```
 
 ### To Do in future iterations:
@@ -168,4 +169,4 @@ mise run dev # to run with hot reload with air
 
 ## License
 
-auth_server is MIT licensed
+doors_of_durin is MIT licensed

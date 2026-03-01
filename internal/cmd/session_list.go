@@ -7,7 +7,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/religiosa1/auth_server/internal/repository/sessions"
+	"github.com/religiosa1/doors_of_durin/internal/repository/sessions"
 )
 
 type SessionList struct {

@@ -5,7 +5,7 @@
 # ```sh
 # docker compose up --build
 # # Adding a user through the cli
-# docker compose exec auth /app user add --password test_password test_user
+# docker compose exec auth /durin user add --password test_password test_user
 # ```
 #
 # Then visit http://localhost:8000/app/ and http://localhost:8000/files/index.html
@@ -15,7 +15,7 @@ services:
     build: .
     environment:
       HOST: "0.0.0.0"
-      DB_FILE: "/data/auth_server.sqlite3"
+      DB_FILE: "/data/durin.sqlite3"
       LOG_TYPE: "text"
       URL_PREFIX: "/auth"
     volumes:

@@ -10,10 +10,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	handlers "github.com/religiosa1/auth_server/internal/http/handlers"
-	middleware "github.com/religiosa1/auth_server/internal/http/middleware"
-	"github.com/religiosa1/auth_server/internal/ratelimit"
-	"github.com/religiosa1/auth_server/internal/service"
+	handlers "github.com/religiosa1/doors_of_durin/internal/http/handlers"
+	middleware "github.com/religiosa1/doors_of_durin/internal/http/middleware"
+	"github.com/religiosa1/doors_of_durin/internal/ratelimit"
+	"github.com/religiosa1/doors_of_durin/internal/service"
 )
 
 var StaticFiles embed.FS

@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/religiosa1/auth_server/internal/csrf"
-	"github.com/religiosa1/auth_server/internal/http/handlers"
-	"github.com/religiosa1/auth_server/internal/ratelimit"
-	"github.com/religiosa1/auth_server/internal/repository"
-	"github.com/religiosa1/auth_server/internal/repository/sessions"
-	"github.com/religiosa1/auth_server/internal/repository/users"
-	"github.com/religiosa1/auth_server/internal/service"
+	"github.com/religiosa1/doors_of_durin/internal/csrf"
+	"github.com/religiosa1/doors_of_durin/internal/http/handlers"
+	"github.com/religiosa1/doors_of_durin/internal/ratelimit"
+	"github.com/religiosa1/doors_of_durin/internal/repository"
+	"github.com/religiosa1/doors_of_durin/internal/repository/sessions"
+	"github.com/religiosa1/doors_of_durin/internal/repository/users"
+	"github.com/religiosa1/doors_of_durin/internal/service"
 )
 
 func newTestDB(t *testing.T) *repository.DB {

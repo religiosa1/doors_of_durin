@@ -6,9 +6,9 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/religiosa1/auth_server/internal/http/handlers"
-	"github.com/religiosa1/auth_server/internal/repository/sessions"
-	"github.com/religiosa1/auth_server/internal/service"
+	"github.com/religiosa1/doors_of_durin/internal/http/handlers"
+	"github.com/religiosa1/doors_of_durin/internal/repository/sessions"
+	"github.com/religiosa1/doors_of_durin/internal/service"
 )
 
 func logoutRequest(sessionID string, backURL string) *http.Request {

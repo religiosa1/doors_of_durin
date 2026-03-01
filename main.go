@@ -4,7 +4,7 @@ import (
 	"embed"
 
 	"github.com/alecthomas/kong"
-	cmd "github.com/religiosa1/auth_server/internal/cmd"
+	cmd "github.com/religiosa1/doors_of_durin/internal/cmd"
 )
 
 //go:embed static

@@ -3,7 +3,7 @@ package middleware_test
 import (
 	"testing"
 
-	"github.com/religiosa1/auth_server/internal/http/middleware"
+	"github.com/religiosa1/doors_of_durin/internal/http/middleware"
 )
 
 func TestOriginalURL(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/religiosa1/auth_server/internal/http/handlers"
-	"github.com/religiosa1/auth_server/internal/service"
+	"github.com/religiosa1/doors_of_durin/internal/http/handlers"
+	"github.com/religiosa1/doors_of_durin/internal/service"
 )
 
 type SessionAdd struct {

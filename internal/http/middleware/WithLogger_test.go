@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/religiosa1/auth_server/internal/http/middleware"
+	"github.com/religiosa1/doors_of_durin/internal/http/middleware"
 )
 
 // captureRequestInfo runs a request through the WithLogger middleware and
