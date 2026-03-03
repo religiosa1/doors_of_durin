@@ -25,7 +25,7 @@ var (
 )
 
 func (s AuthService) Login(username string, password string) (string, error) {
-	ok, err := users.CheckPassword(*s.DB, username, password)
+	userID, err := users.CheckPassword(*s.DB, username, password)
 	if err != nil {
 		if errors.Is(err, repository.ErrRecordNotFound) {
 			return "", ErrUserNotFound
@@ -35,13 +35,8 @@ func (s AuthService) Login(username string, password string) (string, error) {
 		}
 		return "", err
 	}
-	if !ok {
+	if userID == 0 {
 		return "", ErrWrongPassword
-	}
-
-	userID, err := users.GetUserID(*s.DB, username)
-	if err != nil {
-		return "", err
 	}
 
 	sessionID, err := sessions.CreateSession(*s.DB, userID)

@@ -52,19 +52,24 @@ func Create(db repository.DB, username string, password string) error {
 	return err
 }
 
-func CheckPassword(db repository.DB, username string, password string) (bool, error) {
+func CheckPassword(db repository.DB, username string, password string) (int64, error) {
+	var userID int64
 	var hash sql.NullString
-	err := db.DB.QueryRow("SELECT `password_hash` FROM `users` WHERE `name` = ?", username).Scan(&hash)
+	err := db.DB.QueryRow("SELECT `id`, `password_hash` FROM `users` WHERE `name` = ?", username).Scan(&userID, &hash)
 	if errors.Is(err, sql.ErrNoRows) {
-		return false, repository.ErrRecordNotFound
+		return 0, repository.ErrRecordNotFound
 	}
 	if err != nil {
-		return false, err
+		return 0, err
 	}
 	if !hash.Valid {
-		return false, ErrNoPasswordSet
+		return 0, ErrNoPasswordSet
 	}
-	return checkPassword(password, hash.String), nil
+
+	if !checkPassword(password, hash.String) {
+		return 0, nil
+	}
+	return userID, nil
 }
 
 func UpdatePassword(db repository.DB, username string, newPassword string) error {
