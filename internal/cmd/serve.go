@@ -39,6 +39,7 @@ func (s *Serve) Run() error {
 		Window:      cfg.RateLimit.Window,
 		FailDelay:   cfg.RateLimit.FailDelay,
 	})
+	defer limiter.Stop()
 
 	logger := setupLogger(cfg.LogType, cfg.LogLevel)
 

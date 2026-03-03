@@ -102,6 +102,21 @@ func TestLogin_UserNotFound(t *testing.T) {
 	}
 }
 
+func TestLogin_DisabledUser(t *testing.T) {
+	db := newTestDB(t)
+	createTestUser(t, db, "alice", "secret")
+	_, err := db.DB.Exec("UPDATE users SET password_hash = NULL WHERE name = 'alice'")
+	if err != nil {
+		t.Fatalf("failed to disable user: %v", err)
+	}
+	svc := service.AuthService{DB: db}
+
+	_, err = svc.Login("alice", "secret")
+	if !errors.Is(err, service.ErrUserDisabled) {
+		t.Fatalf("expected ErrUserDisabled, got %v", err)
+	}
+}
+
 // Logout
 
 func TestLogout_Success(t *testing.T) {

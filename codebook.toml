@@ -1,6 +1,7 @@
 words = [
     "authserver",
     "bodyclass",
+    "durin",
     "tmpl",
     "withargs",
 ]

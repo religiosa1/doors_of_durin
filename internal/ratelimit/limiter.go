@@ -22,13 +22,49 @@ type Limiter struct {
 	entries map[string]*entry
 	cfg     Config
 	now     func() time.Time
+	stop    chan struct{}
 }
 
 func New(cfg Config) *Limiter {
-	return &Limiter{
+	l := &Limiter{
 		entries: make(map[string]*entry),
 		cfg:     cfg,
 		now:     time.Now,
+		stop:    make(chan struct{}),
+	}
+	if cfg.Window > 0 {
+		go l.cleanup()
+	}
+	return l
+}
+
+func (l *Limiter) Stop() {
+	if l.stop != nil {
+		close(l.stop)
+	}
+}
+
+func (l *Limiter) cleanup() {
+	ticker := time.NewTicker(l.cfg.Window)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			l.purgeExpired()
+		case <-l.stop:
+			return
+		}
+	}
+}
+
+func (l *Limiter) purgeExpired() {
+	now := l.now()
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	for ip, e := range l.entries {
+		if now.After(e.resetAt) {
+			delete(l.entries, ip)
+		}
 	}
 }
 

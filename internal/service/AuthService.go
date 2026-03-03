@@ -19,6 +19,7 @@ type AuthService struct {
 var (
 	ErrUserNotFound    = errors.New("user not found")
 	ErrWrongPassword   = errors.New("wrong password")
+	ErrUserDisabled    = errors.New("user account is disabled")
 	ErrSessionNotFound = errors.New("session not found")
 	ErrSessionExpired  = errors.New("session expired")
 )
@@ -28,6 +29,9 @@ func (s AuthService) Login(username string, password string) (string, error) {
 	if err != nil {
 		if errors.Is(err, repository.ErrRecordNotFound) {
 			return "", ErrUserNotFound
+		}
+		if errors.Is(err, users.ErrNoPasswordSet) {
+			return "", ErrUserDisabled
 		}
 		return "", err
 	}

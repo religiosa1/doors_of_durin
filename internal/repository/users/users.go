@@ -12,6 +12,9 @@ import (
 	"github.com/religiosa1/doors_of_durin/internal/repository"
 )
 
+// ErrNoPasswordSet is returned when a user account has no password hash stored.
+var ErrNoPasswordSet = errors.New("user has no password set")
+
 type User struct {
 	Name       string    `db:"name"        json:"name"`
 	CreatedAt  time.Time `db:"created_at"  json:"createdAt"`
@@ -59,7 +62,7 @@ func CheckPassword(db repository.DB, username string, password string) (bool, er
 		return false, err
 	}
 	if !hash.Valid {
-		return false, nil
+		return false, ErrNoPasswordSet
 	}
 	return checkPassword(password, hash.String), nil
 }
