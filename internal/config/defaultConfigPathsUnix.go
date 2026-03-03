@@ -11,8 +11,8 @@ import (
 // UserConfigPath: path template for user-specific config, use ${XDG_CONFIG_HOME} or ${HOME} as placeholders
 // GlobalConfigPath: path to global config file
 var (
-	UserConfigPath   = "${XDG_CONFIG_HOME}/auth_server/config.yml"
-	GlobalConfigPath = "/etc/auth_server.yml"
+	UserConfigPath   = "${XDG_CONFIG_HOME}/durin/config.yml"
+	GlobalConfigPath = "/etc/durin.yml"
 )
 
 // getDefaultConfigPaths returns config paths in priority order:

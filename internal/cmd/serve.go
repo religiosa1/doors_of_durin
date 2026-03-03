@@ -29,7 +29,9 @@ func (s *Serve) Run() error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 
 	MergeValueInto(&cfg.Port, s.Port)
 	MergeValueInto(&cfg.Host, s.Host)

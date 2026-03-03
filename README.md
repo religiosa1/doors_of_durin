@@ -82,6 +82,31 @@ User list web CRUD, currently managed only through the CLI.
 Perform some basic monitoring and alerting if the traffic to the services
 exceeds some predefined values.
 
+## Configuration
+
+Service can be configured with a yml config file or through env variables.
+When resolving config file it picks the first one found in the following order:
+
+- `${XDG_CONFIG_HOME}/durin/config.yml`
+- `/etc/durin.yml`
+
+Configuration file can also be specified either through the `DURIN_CONFIG_PATH`
+env variable, or with `-c` cli flag.
+
+For an example of configuration file please see [conf/config.example.yml](conf/config.example.yml)
+
+On windows the following paths will be checked instead:
+
+- `${APPDATA}\\durin\\config.yml`
+- `${PROGRAMDATA}\\durin\\config.yml`
+
+You can override `UserConfigPath` and `GlobalConfigPath` at build time with ldflags
+if you want to modify this location, e.g.:
+
+```sh
+go build `-X 'github.com/religiosa1/doors_of_durin/internal/config.GlobalConfigPath=/something/else` .
+```
+
 ## What to forward from HTTP:
 
 ```

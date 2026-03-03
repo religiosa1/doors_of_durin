@@ -1,0 +1,26 @@
+# Doors Of Durin connfiguration file example.
+# All values specified in this config are the default value, you don't need to
+# actually specify them unless you want to.
+
+port: 4000
+host: localhost
+# basepath of auth serving UI serving location, for correct paths on static files
+url_prefix: ""
+# logger verbosity level, possible values: "debug", "info", "warn", "error"
+log_level: info
+# structured log output type: "json", "text"
+log_type: json
+# main db file path; -wal and -shm files will be created in the same dir
+db_file: durin.sqlite3
+# session duration before expiration, specified as a duration value;
+# session will be expired after this time passes since the last usage
+session_ttl: 168h
+# Login page fixed-window rate limiter settings
+rate_limit:
+  # amount of failed attempts allowed before blocking IP address
+  max_attempts: 10
+  # window-size
+  window: 10m
+  # after each failed login attempt the form submission will sleep for the specified time,
+  # to make targeted brute-force attacks more difficult
+  fail_delay: 2s

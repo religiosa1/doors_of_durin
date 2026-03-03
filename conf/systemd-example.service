@@ -1,0 +1,24 @@
+# Example of a systemd unit for Doors of Durin 
+# /etc/systemd/system/durin.service
+
+[Unit]
+Description=Doors of Durin auth server
+After=network.target
+Documentation=https://github.com/religiosa1/doors_of_durin
+
+[Service]
+User=www-data
+Group=www-data
+# Location where service will store the db
+WorkingDirectory=/var/www/durin
+# Restricting file access just to this dir
+ReadWritePaths=/var/www/durin
+# path to the binary with optional path to config
+ExecStart=/usr/local/bin/durin
+# whatever else you seem fit bellow:
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

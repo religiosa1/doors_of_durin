@@ -10,7 +10,7 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
-const configPathEnvKey = "CONFIG_PATH"
+const configPathEnvKey = "DURIN_CONFIG_PATH"
 
 type RateLimitConfig struct {
 	MaxAttempts int           `yaml:"max_attempts" env:"RATE_LIMIT_MAX_ATTEMPTS" env-default:"10"`
@@ -23,7 +23,7 @@ type Config struct {
 	LogLevel string `yaml:"log_level" env:"LOG_LEVEL" env-default:"info"`
 	// structured log output type: "json", "text"
 	LogType    string          `yaml:"log_type" env:"LOG_TYPE" env-default:"json"`
-	DBFile     string          `yaml:"db_file" env:"DB_FILE" env-default:"auth_server.sqlite3"`
+	DBFile     string          `yaml:"db_file" env:"DB_FILE" env-default:"durin.sqlite3"`
 	Port       string          `yaml:"port" env:"PORT" env-default:"4000"`
 	Host       string          `yaml:"host" env:"HOST" env-default:"localhost"`
 	SessionTTL time.Duration   `yaml:"session_ttl" env:"SESSION_TTL" env-default:"168h"`
