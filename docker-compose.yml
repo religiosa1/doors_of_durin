@@ -31,9 +31,9 @@ services:
     ports:
       - "8000:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
       # Some static for testing as well, lives in nginx/static/index.html
-      - ./nginx/static:/var/www/static:ro
+      - ./conf/static:/var/www/static:ro
     depends_on:
       - auth
       - backend

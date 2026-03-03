@@ -147,7 +147,7 @@ Remote IP:
   }
 ```
 
-See a more detailed example of nginx configuration file in [nginx/nginx.conf](./nginx/nginx.conf)
+See a more detailed example of nginx configuration file in [conf/nginx.conf](./conf/nginx.conf)
 
 ## Working with the source-code locally.
 

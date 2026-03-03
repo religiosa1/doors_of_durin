@@ -3,6 +3,11 @@ go = "1.24"
 golangci-lint = "1"
 "go:github.com/air-verse/air" = "latest"
 
+[tasks.build]
+description = "Build the executable"
+env = { CGO_ENABLED = '1' }
+run = "go build -o durin ."
+
 [tasks.dev]
 description = "Run dev server with live reload"
 run = "air"
