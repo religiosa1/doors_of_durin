@@ -72,20 +72,18 @@ type LoginSubmit struct {
 	URLPrefix   string
 }
 
-func (l LoginSubmit) recordFailure(r *http.Request) {
+func (l LoginSubmit) recordFailure(ip string) bool {
 	if l.Limiter == nil {
-		return
+		return false
 	}
-	ip := middleware.GetRequestInfo(r.Context()).IP
-	l.Limiter.RecordFailure(ip)
+	wasBlocked := l.Limiter.RecordFailure(ip)
 	time.Sleep(l.Limiter.FailDelay())
+	return wasBlocked
 }
 
 func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	logger := middleware.GetLogger(r.Context())
-
+	ip := middleware.GetRequestInfo(r.Context()).IP
 	if l.Limiter != nil {
-		ip := middleware.GetRequestInfo(r.Context()).IP
 		if l.Limiter.IsBlocked(ip) {
 			http.Error(w, "too many requests", http.StatusTooManyRequests)
 			return
@@ -106,7 +104,12 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	redirectTo := r.FormValue("redirect_to")
 
-	logger.Info("login attempt", slog.String("username", username))
+	logger := middleware.GetLogger(r.Context()).With(
+		slog.String("username", username),
+		slog.String("redirectTo", redirectTo),
+		slog.String("ip", ip),
+	)
+	logger.Info("login attempt")
 
 	renderUnauthorized := func() {
 		newToken, err := csrf.GenerateToken()
@@ -132,14 +135,18 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sessionID, err := l.AuthService.Login(username, password)
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrWrongPassword) || errors.Is(err, service.ErrUserDisabled) {
-			l.recordFailure(r)
+			logger.Info("login failed")
+			if wasBlocked := l.recordFailure(ip); wasBlocked {
+				logger.Warn("IP address blocked by the rate limiter")
+			}
 			renderUnauthorized()
 			return
 		}
-		logger.Error("error checking password", slog.String("username", username), slog.Any("error", err))
+		logger.Error("error checking password", slog.Any("error", err))
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
+	logger.Info("login successful")
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     SessionCookieName,

@@ -76,12 +76,15 @@ func (l *Limiter) IsBlocked(rawIP string) bool {
 	return e.count >= l.cfg.MaxAttempts
 }
 
-func (l *Limiter) RecordFailure(rawIP string) {
+// RecordFailure records a failure from the IP address and returns bool value
+// indicating whether the address was blocked on this attempt.
+func (l *Limiter) RecordFailure(rawIP string) bool {
 	ip := normalizeIP(rawIP)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	e := l.getOrCreate(ip)
 	e.count++
+	return e.count == l.cfg.MaxAttempts
 }
 
 func (l *Limiter) FailDelay() time.Duration {

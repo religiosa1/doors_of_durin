@@ -35,7 +35,7 @@ func WithLogger(logger *slog.Logger) Middleware {
 			info := parseRequestInfo(r)
 			ctx = context.WithValue(ctx, loggingContextRequestInfo, info)
 
-			newLogger.Info("Incoming request",
+			newLogger.Debug("Incoming request",
 				slog.String("method", info.Method),
 				slog.String("scheme", info.Scheme),
 				slog.String("path", info.Path),
@@ -47,7 +47,14 @@ func WithLogger(logger *slog.Logger) Middleware {
 			rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 
 			next.ServeHTTP(rw, r.WithContext(ctx))
-			newLogger.Info(
+
+			var logFn func(msg string, args ...any)
+			if rw.status >= 400 {
+				logFn = newLogger.Warn
+			} else {
+				logFn = newLogger.Debug
+			}
+			logFn(
 				"request completed",
 				slog.String("duration", time.Since(t1).String()),
 				slog.Int("status_code", rw.status),
