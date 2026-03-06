@@ -32,6 +32,12 @@ body {
 	min-height: 100dvh;
 }
 
+.full-screen.login {
+	/* Offsetting the form slightly, for better align with doors od Durin design */
+	padding-top: 7vh;
+	box-sizing: border-box;
+}
+
 h1 {
 	font-size: 2rem;
 	margin: 0 0 2rem;
