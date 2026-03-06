@@ -1,5 +1,4 @@
-PRAGMA user_version = 1;
-
+-- +goose Up
 CREATE TABLE IF NOT EXISTS `users` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
@@ -15,4 +14,9 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 	`created_at` datetime DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
   `last_used_at` datetime,
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE cascade ON DELETE cascade
-)
+);
+
+-- +goose Down
+DROP TABLE IF EXISTS `sessions`;
+DROP INDEX IF EXISTS `users_name_unique`;
+DROP TABLE IF EXISTS `users`;

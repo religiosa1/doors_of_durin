@@ -2,11 +2,12 @@
 package repository
 
 import (
-	_ "embed"
+	"embed"
 	"errors"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/pressly/goose/v3"
 )
 
 var (
@@ -51,19 +52,16 @@ func New(dbFileName string) (*DB, error) {
 	return &db, nil
 }
 
-//go:embed migrations/000_init.sql
-var schema string
+//go:embed migrations
+var migrationsFS embed.FS
 
 // open and migrate if necessary the db
 func (d DB) open() error {
-	var userVersion int
-	err := d.DB.Get(&userVersion, "PRAGMA user_version;")
-
-	if err == nil && userVersion == 0 {
-		_, err = d.DB.Exec(schema)
+	goose.SetBaseFS(migrationsFS)
+	if err := goose.SetDialect("sqlite3"); err != nil {
+		return err
 	}
-
-	return err
+	return goose.Up(d.DB.DB, "migrations")
 }
 
 func (d *DB) Close() (err error) {
