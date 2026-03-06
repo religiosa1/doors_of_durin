@@ -4,6 +4,10 @@ A simple golang auth server, intended to be used with nginx [auth_request](https
 to cover with basic-like authorization some of the self-hosted services with a
 small and manually controlled list of users -- basically your family members.
 
+<img width="1780" height="1473" alt="localhost_4000_login" src="https://github.com/user-attachments/assets/fdf08379-c041-42b5-a1f6-473764da667e" />
+
+_Speak, friend, and enter._
+
 If you're looking for a full-featured, production scale one look at [Authelia](https://www.authelia.com/).
 
 Can also work behind [traefik](https://traefik.io/) or [caddy](https://caddyserver.com/).
