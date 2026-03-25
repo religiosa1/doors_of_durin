@@ -46,7 +46,7 @@ func (u *UserAdd) Run() error {
 		return fmt.Errorf("password cannot be empty")
 	}
 
-	_, db, err := loadConfigAndDB(u.Config)
+	_, db, err := loadConfigAndDBForCli(u.Config)
 	if err != nil {
 		return err
 	}

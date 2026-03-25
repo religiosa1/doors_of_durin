@@ -40,7 +40,7 @@ func (s *SessionAdd) Run() error {
 		return fmt.Errorf("password cannot be empty")
 	}
 
-	cfg, db, err := loadConfigAndDB(s.Config)
+	cfg, db, err := loadConfigAndDBForCli(s.Config)
 	if err != nil {
 		return err
 	}

@@ -19,12 +19,13 @@ func MergeValueInto[T comparable](dst *T, src T) {
 	}
 }
 
-func loadConfigAndDB(configPath string) (config.Config, *repository.DB, error) {
+func loadConfigAndDBForCli(configPath string) (config.Config, *repository.DB, error) {
 	cfg, err := config.Load(configPath)
 	if err != nil {
 		return cfg, nil, fmt.Errorf("loading config: %w", err)
 	}
-	db, err := repository.New(cfg.DBFile)
+	// we're passing nil to migrator in CLI to avoid  potential migration messages in CLI usage
+	db, err := repository.New(cfg.DBFile, nil)
 	if err != nil {
 		return cfg, nil, fmt.Errorf("opening database: %w", err)
 	}

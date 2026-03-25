@@ -38,7 +38,7 @@ func (u *UserRename) Run() error {
 		return fmt.Errorf("new name cannot be empty")
 	}
 
-	_, db, err := loadConfigAndDB(u.Config)
+	_, db, err := loadConfigAndDBForCli(u.Config)
 	if err != nil {
 		return err
 	}

@@ -10,7 +10,7 @@ import (
 
 func newTestDB(t *testing.T) *repository.DB {
 	t.Helper()
-	db, err := repository.New(":memory:")
+	db, err := repository.New(":memory:", nil)
 	if err != nil {
 		t.Fatalf("newTestDB: %v", err)
 	}

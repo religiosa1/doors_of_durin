@@ -2,8 +2,12 @@
 package repository
 
 import (
+	"context"
 	"embed"
 	"errors"
+	"io"
+	"io/fs"
+	"log/slog"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -24,7 +28,7 @@ type DB struct {
 	DB *sqlx.DB
 }
 
-func New(dbFileName string) (*DB, error) {
+func New(dbFileName string, logger *slog.Logger) (*DB, error) {
 	if dbFileName == "" {
 		return nil, nil
 	}
@@ -45,7 +49,10 @@ func New(dbFileName string) (*DB, error) {
 		d.SetMaxOpenConns(1)
 	}
 	db.DB = d
-	err = db.open()
+	if logger == nil {
+		logger = slog.New(slog.NewTextHandler(io.Discard, nil))
+	}
+	err = db.open(logger)
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +63,22 @@ func New(dbFileName string) (*DB, error) {
 var migrationsFS embed.FS
 
 // open and migrate if necessary the db
-func (d DB) open() error {
-	goose.SetBaseFS(migrationsFS)
-	if err := goose.SetDialect("sqlite3"); err != nil {
+func (d DB) open(logger *slog.Logger) error {
+	migrationsSubFS, err := fs.Sub(migrationsFS, "migrations")
+	if err != nil {
 		return err
 	}
-	return goose.Up(d.DB.DB, "migrations")
+	provider, err := goose.NewProvider(
+		goose.DialectSQLite3,
+		d.DB.DB,
+		migrationsSubFS,
+		goose.WithSlog(logger),
+	)
+	if err != nil {
+		return err
+	}
+	_, err = provider.Up(context.Background())
+	return err
 }
 
 func (d *DB) Close() (err error) {

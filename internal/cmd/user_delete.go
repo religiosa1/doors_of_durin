@@ -35,7 +35,7 @@ func (u *UserDelete) Run() error {
 		return nil
 	}
 
-	_, db, err := loadConfigAndDB(u.Config)
+	_, db, err := loadConfigAndDBForCli(u.Config)
 	if err != nil {
 		return err
 	}

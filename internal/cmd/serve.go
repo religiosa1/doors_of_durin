@@ -12,7 +12,9 @@ import (
 
 	handlers "github.com/religiosa1/doors_of_durin/internal/http/handlers"
 	middleware "github.com/religiosa1/doors_of_durin/internal/http/middleware"
+	"github.com/religiosa1/doors_of_durin/internal/config"
 	"github.com/religiosa1/doors_of_durin/internal/ratelimit"
+	"github.com/religiosa1/doors_of_durin/internal/repository"
 	"github.com/religiosa1/doors_of_durin/internal/service"
 )
 
@@ -25,16 +27,23 @@ type Serve struct {
 }
 
 func (s *Serve) Run() error {
-	cfg, db, err := loadConfigAndDB(s.Config)
+	cfg, err := config.Load(s.Config)
 	if err != nil {
-		return err
+		return fmt.Errorf("loading config: %w", err)
+	}
+
+	MergeValueInto(&cfg.Port, s.Port)
+	MergeValueInto(&cfg.Host, s.Host)
+
+	logger := setupLogger(cfg.LogType, cfg.LogLevel)
+
+	db, err := repository.New(cfg.DBFile, logger)
+	if err != nil {
+		return fmt.Errorf("opening database: %w", err)
 	}
 	defer func() {
 		_ = db.Close()
 	}()
-
-	MergeValueInto(&cfg.Port, s.Port)
-	MergeValueInto(&cfg.Host, s.Host)
 
 	limiter := ratelimit.New(ratelimit.Config{
 		MaxAttempts: cfg.RateLimit.MaxAttempts,
@@ -42,8 +51,6 @@ func (s *Serve) Run() error {
 		FailDelay:   cfg.RateLimit.FailDelay,
 	})
 	defer limiter.Stop()
-
-	logger := setupLogger(cfg.LogType, cfg.LogLevel)
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)

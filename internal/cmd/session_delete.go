@@ -38,12 +38,12 @@ type SessionDelete struct {
 }
 
 func (s *SessionDelete) Run() error {
-	filter, err := s.sessionFilterArgs.toFilter()
+	filter, err := s.toFilter()
 	if err != nil {
 		return err
 	}
 
-	_, db, err := loadConfigAndDB(s.Config)
+	_, db, err := loadConfigAndDBForCli(s.Config)
 	if err != nil {
 		return err
 	}

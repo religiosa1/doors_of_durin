@@ -17,12 +17,12 @@ type SessionList struct {
 }
 
 func (s *SessionList) Run() error {
-	filter, err := s.sessionFilterArgs.toFilter()
+	filter, err := s.toFilter()
 	if err != nil {
 		return err
 	}
 
-	_, db, err := loadConfigAndDB(s.Config)
+	_, db, err := loadConfigAndDBForCli(s.Config)
 	if err != nil {
 		return err
 	}
@@ -40,18 +40,24 @@ func (s *SessionList) Run() error {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "ID\tUSERNAME\tCREATED AT\tLAST USED AT")
+	_, err = fmt.Fprintln(w, "ID\tUSERNAME\tCREATED AT\tLAST USED AT")
+	if err != nil {
+		return err
+	}
 	for _, sess := range list {
 		lastUsed := "-"
 		if sess.LastUsedAt != nil {
 			lastUsed = sess.LastUsedAt.Format(time.DateTime)
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+		_, err = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 			sess.ID,
 			sess.Username,
 			sess.CreatedAt.Format(time.DateTime),
 			lastUsed,
 		)
+		if err != nil {
+			return err
+		}
 	}
 	return w.Flush()
 }

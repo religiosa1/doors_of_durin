@@ -16,7 +16,7 @@ type UserList struct {
 }
 
 func (u *UserList) Run() error {
-	_, db, err := loadConfigAndDB(u.Config)
+	_, db, err := loadConfigAndDBForCli(u.Config)
 	if err != nil {
 		return err
 	}
@@ -34,13 +34,19 @@ func (u *UserList) Run() error {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "NAME\tCREATED AT\tMODIFIED AT")
+	_, err = fmt.Fprintln(w, "NAME\tCREATED AT\tMODIFIED AT")
+	if err != nil {
+		return err
+	}
 	for _, user := range list {
-		fmt.Fprintf(w, "%s\t%s\t%s\n",
+		_, err := fmt.Fprintf(w, "%s\t%s\t%s\n",
 			user.Name,
 			user.CreatedAt.Format(time.DateTime),
 			user.ModifiedAt.Format(time.DateTime),
 		)
+		if err != nil {
+			return err
+		}
 	}
 	return w.Flush()
 }
