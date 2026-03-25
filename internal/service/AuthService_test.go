@@ -87,7 +87,7 @@ func TestLogin_WrongPassword(t *testing.T) {
 	svc := service.AuthService{DB: db}
 
 	_, err := svc.Login("alice", "wrong")
-	if !errors.Is(err, service.ErrWrongPassword) {
+	if !errors.Is(err, service.ErrBadPassword) {
 		t.Fatalf("expected ErrWrongPassword, got %v", err)
 	}
 }
@@ -197,7 +197,7 @@ func TestCheckAuth_SlidingTTL_RecentLastUsedAt(t *testing.T) {
 	db := newTestDB(t)
 	createTestUser(t, db, "alice", "secret")
 	sessionID := createTestSession(t, db, "alice")
-	backdateSession(t, db, sessionID, 2*time.Hour)    // created_at is outside TTL
+	backdateSession(t, db, sessionID, 2*time.Hour)       // created_at is outside TTL
 	setSessionLastUsed(t, db, sessionID, 30*time.Minute) // but last_used_at is within TTL
 	svc := service.AuthService{DB: db, SessionTTL: time.Hour}
 

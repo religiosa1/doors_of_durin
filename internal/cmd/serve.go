@@ -64,7 +64,7 @@ func (s *Serve) Run() error {
 
 		mux.HandleFunc("GET /{$}", handlers.Healthcheck)
 
-		mux.Handle("/verify", middlewares(handlers.Verify{AuthService: authService}))
+		mux.Handle("/verify", middlewares(handlers.Verify{AuthService: authService, Limiter: limiter, EnableBasicAuth: cfg.EnableBasicAuth}))
 		mux.Handle("GET /login", middlewares(handlers.Login{URLPrefix: cfg.URLPrefix}))
 		mux.Handle("POST /login", middlewares(handlers.LoginSubmit{AuthService: authService, Limiter: limiter, SessionTTL: cfg.SessionTTL, URLPrefix: cfg.URLPrefix}))
 		mux.Handle("POST /logout", middlewares(handlers.Logout{AuthService: authService}))

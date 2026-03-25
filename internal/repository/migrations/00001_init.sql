@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
   `password_hash` text,
+  `last_basic_auth_at` datetime,
 	`created_at` datetime DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
 	`modified_at` datetime DEFAULT (CURRENT_TIMESTAMP) NOT NULL
 );

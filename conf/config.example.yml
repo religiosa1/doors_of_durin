@@ -24,3 +24,5 @@ rate_limit:
   # after each failed login attempt the form submission will sleep for the specified time,
   # to make targeted brute-force attacks more difficult
   fail_delay: 2s
+# Allows clients to pass basic auth as well as session for authorization
+enable_basic_auth: false

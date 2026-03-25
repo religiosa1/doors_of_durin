@@ -134,7 +134,7 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	sessionID, err := l.AuthService.Login(username, password)
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrWrongPassword) || errors.Is(err, service.ErrUserDisabled) {
+		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrBadPassword) || errors.Is(err, service.ErrUserDisabled) {
 			logger.Info("login failed")
 			if wasBlocked := l.recordFailure(ip); wasBlocked {
 				logger.Warn("IP address blocked by the rate limiter")

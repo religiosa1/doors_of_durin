@@ -18,25 +18,31 @@ type AuthService struct {
 
 var (
 	ErrUserNotFound    = errors.New("user not found")
-	ErrWrongPassword   = errors.New("wrong password")
+	ErrBadPassword     = errors.New("wrong password")
 	ErrUserDisabled    = errors.New("user account is disabled")
 	ErrSessionNotFound = errors.New("session not found")
 	ErrSessionExpired  = errors.New("session expired")
 )
 
-func (s AuthService) Login(username string, password string) (string, error) {
-	userID, err := users.CheckPassword(*s.DB, username, password)
+// LoginNoSession logs user in without issuing a session, but updates last
+// basic login timestamp in DB -- for basic auth flow
+func (s AuthService) LoginNoSession(username string, password string) error {
+	_, err := s.checkPassword(username, password)
 	if err != nil {
-		if errors.Is(err, repository.ErrRecordNotFound) {
-			return "", ErrUserNotFound
-		}
-		if errors.Is(err, users.ErrNoPasswordSet) {
-			return "", ErrUserDisabled
-		}
-		return "", err
+		return err
 	}
-	if userID == 0 {
-		return "", ErrWrongPassword
+	err = users.BumpLastBasicAuthTimestamp(*s.DB, username)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Login logs a user in and issues a new Session -- for normal login flow
+func (s AuthService) Login(username string, password string) (string, error) {
+	userID, err := s.checkPassword(username, password)
+	if err != nil {
+		return "", err
 	}
 
 	sessionID, err := sessions.CreateSession(*s.DB, userID)
@@ -79,4 +85,21 @@ func (s AuthService) CheckAuth(sessionID string) (string, error) {
 	}
 
 	return session.Username, nil
+}
+
+func (s AuthService) checkPassword(username string, password string) (int64, error) {
+	userID, err := users.CheckPassword(*s.DB, username, password)
+	if err != nil {
+		if errors.Is(err, repository.ErrRecordNotFound) {
+			return 0, ErrUserNotFound
+		}
+		if errors.Is(err, users.ErrNoPasswordSet) {
+			return 0, ErrUserDisabled
+		}
+		if errors.Is(err, users.ErrBadPassword) {
+			return 0, ErrBadPassword
+		}
+		return 0, err
+	}
+	return userID, nil
 }

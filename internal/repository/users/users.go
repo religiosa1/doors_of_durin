@@ -13,12 +13,16 @@ import (
 )
 
 // ErrNoPasswordSet is returned when a user account has no password hash stored.
-var ErrNoPasswordSet = errors.New("user has no password set")
+var (
+	ErrNoPasswordSet = errors.New("user has no password set")
+	ErrBadPassword   = errors.New("wrong password")
+)
 
 type User struct {
-	Name       string    `db:"name"        json:"name"`
-	CreatedAt  time.Time `db:"created_at"  json:"createdAt"`
-	ModifiedAt time.Time `db:"modified_at" json:"modifiedAt"`
+	Name            string     `db:"name"        json:"name"`
+	LastBasicAuthAt *time.Time `db:"last_basic_auth_at" json:"lastBasicAuthAt"`
+	CreatedAt       time.Time  `db:"created_at"  json:"createdAt"`
+	ModifiedAt      time.Time  `db:"modified_at" json:"modifiedAt"`
 }
 
 func List(db repository.DB) ([]User, error) {
@@ -67,9 +71,28 @@ func CheckPassword(db repository.DB, username string, password string) (int64, e
 	}
 
 	if !checkPassword(password, hash.String) {
-		return 0, nil
+		return 0, ErrBadPassword
 	}
 	return userID, nil
+}
+
+// BumpLastBasicAuthTimestamp updates timestamp last successful basicAuth for a user
+func BumpLastBasicAuthTimestamp(db repository.DB, username string) error {
+	result, err := db.DB.Exec(
+		"UPDATE `users` SET `last_basic_auth_at` = CURRENT_TIMESTAMP WHERE `name` = ?",
+		username,
+	)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return repository.ErrRecordNotFound
+	}
+	return nil
 }
 
 func UpdatePassword(db repository.DB, username string, newPassword string) error {

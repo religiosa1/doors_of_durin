@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/religiosa1/doors_of_durin/internal/http/handlers"
+	"github.com/religiosa1/doors_of_durin/internal/ratelimit"
 	"github.com/religiosa1/doors_of_durin/internal/repository"
 	"github.com/religiosa1/doors_of_durin/internal/repository/sessions"
 	"github.com/religiosa1/doors_of_durin/internal/repository/users"
@@ -19,6 +20,12 @@ func verifyRequest(sessionID string) *http.Request {
 	if sessionID != "" {
 		req.AddCookie(&http.Cookie{Name: handlers.SessionCookieName, Value: sessionID})
 	}
+	return req
+}
+
+func basicAuthVerifyRequest(username, password string) *http.Request {
+	req := httptest.NewRequest("GET", "/verify", nil)
+	req.SetBasicAuth(username, password)
 	return req
 }
 
@@ -135,5 +142,97 @@ func TestVerify_LastUsedAtBumped(t *testing.T) {
 	}
 	if lastUsedAt.Time.Before(before.Truncate(time.Second)) {
 		t.Fatalf("expected last_used_at >= %v, got %v", before, lastUsedAt.Time)
+	}
+}
+
+func newTestLimiter(t *testing.T) *ratelimit.Limiter {
+	t.Helper()
+	limiter := ratelimit.New(ratelimit.Config{MaxAttempts: 3, Window: time.Minute, FailDelay: 0})
+	t.Cleanup(limiter.Stop)
+	return limiter
+}
+
+func TestVerify_BasicAuth_Success(t *testing.T) {
+	db := newTestDB(t)
+	if err := users.Create(*db, "alice", "secret"); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	before := time.Now()
+	rr := httptest.NewRecorder()
+	h := handlers.Verify{AuthService: service.AuthService{DB: db}, EnableBasicAuth: true, Limiter: newTestLimiter(t)}
+	h.ServeHTTP(rr, basicAuthVerifyRequest("alice", "secret"))
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected %d, got %d", http.StatusOK, rr.Code)
+	}
+	if got := rr.Header().Get("X-Auth-User"); got != "alice" {
+		t.Fatalf("expected X-Auth-User=alice, got %q", got)
+	}
+
+	var lastBasicAuthAt sql.NullTime
+	err := db.DB.QueryRow("SELECT last_basic_auth_at FROM users WHERE name = ?", "alice").Scan(&lastBasicAuthAt)
+	if err != nil {
+		t.Fatalf("querying last_basic_auth_at: %v", err)
+	}
+	if !lastBasicAuthAt.Valid {
+		t.Fatal("expected last_basic_auth_at to be set after successful basic auth")
+	}
+	if lastBasicAuthAt.Time.Before(before.Truncate(time.Second)) {
+		t.Fatalf("expected last_basic_auth_at >= %v, got %v", before, lastBasicAuthAt.Time)
+	}
+}
+
+func TestVerify_BasicAuth_Disabled(t *testing.T) {
+	db := newTestDB(t)
+	if err := users.Create(*db, "alice", "secret"); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	rr := httptest.NewRecorder()
+	h := handlers.Verify{AuthService: service.AuthService{DB: db}, EnableBasicAuth: false, Limiter: newTestLimiter(t)}
+	h.ServeHTTP(rr, basicAuthVerifyRequest("alice", "secret"))
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("expected %d, got %d", http.StatusForbidden, rr.Code)
+	}
+}
+
+func TestVerify_BasicAuth_BadPassword(t *testing.T) {
+	db := newTestDB(t)
+	if err := users.Create(*db, "alice", "secret"); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	rr := httptest.NewRecorder()
+	h := handlers.Verify{AuthService: service.AuthService{DB: db}, EnableBasicAuth: true, Limiter: newTestLimiter(t)}
+	h.ServeHTTP(rr, basicAuthVerifyRequest("alice", "wrong"))
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("expected %d, got %d", http.StatusUnauthorized, rr.Code)
+	}
+}
+
+func TestVerify_BasicAuth_RateLimited(t *testing.T) {
+	db := newTestDB(t)
+	if err := users.Create(*db, "alice", "secret"); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	limiter := newTestLimiter(t)
+	h := handlers.Verify{AuthService: service.AuthService{DB: db}, EnableBasicAuth: true, Limiter: limiter}
+
+	for i := range 3 {
+		rr := httptest.NewRecorder()
+		h.ServeHTTP(rr, basicAuthVerifyRequest("alice", "wrong"))
+		if rr.Code != http.StatusUnauthorized {
+			t.Fatalf("attempt %d: expected %d, got %d", i+1, http.StatusUnauthorized, rr.Code)
+		}
+	}
+
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, basicAuthVerifyRequest("alice", "secret"))
+	if rr.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected %d after rate limit threshold, got %d", http.StatusTooManyRequests, rr.Code)
 	}
 }

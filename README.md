@@ -16,6 +16,7 @@ Can also work behind [traefik](https://traefik.io/) or [caddy](https://caddyserv
 
 - lightweight, minimal dependency, single-binary distribution
 - ULID-based session authentication
+- Optional basic-auth support for API access
 - full structured logging for everything
 - WAL-mode sqlite with hashed passwords -- once written, cannot be decoded back
 - rate-limiting by IP for the login endpoint against brute-force attacks
@@ -47,6 +48,17 @@ session cookie is present in the request.
 
 No Web-UI for registration or password restore as it's assumed list of users
 is small enough for manual management.
+
+### BasicAuth
+
+If config field `EnableBasicAuth` is set to true, `/verify` endpoint will also
+allow basic-auth authentication. Make sure, your server is behind SSL in order
+to use it, otherwise login-password pair can be trivially sniffed from the
+request.
+
+Failed basic auth requests will trigger a rate-limiting, which will prevent any
+basic-auth or session-based logins from the IP-address (but it won't invalidate
+current active sessions).
 
 ## CLI usage:
 

@@ -22,13 +22,14 @@ type Config struct {
 	// logger minimum level: "debug", "info", "warn", "error"
 	LogLevel string `yaml:"log_level" env:"LOG_LEVEL" env-default:"info"`
 	// structured log output type: "json", "text"
-	LogType    string          `yaml:"log_type" env:"LOG_TYPE" env-default:"json"`
-	DBFile     string          `yaml:"db_file" env:"DB_FILE" env-default:"durin.sqlite3"`
-	Port       string          `yaml:"port" env:"PORT" env-default:"4000"`
-	Host       string          `yaml:"host" env:"HOST" env-default:"localhost"`
-	SessionTTL time.Duration   `yaml:"session_ttl" env:"SESSION_TTL" env-default:"168h"`
-	RateLimit  RateLimitConfig `yaml:"rate_limit"`
-	URLPrefix  string          `yaml:"url_prefix" env:"URL_PREFIX" env-default:""`
+	LogType         string          `yaml:"log_type" env:"LOG_TYPE" env-default:"json"`
+	DBFile          string          `yaml:"db_file" env:"DB_FILE" env-default:"durin.sqlite3"`
+	Port            string          `yaml:"port" env:"PORT" env-default:"4000"`
+	Host            string          `yaml:"host" env:"HOST" env-default:"localhost"`
+	SessionTTL      time.Duration   `yaml:"session_ttl" env:"SESSION_TTL" env-default:"168h"`
+	RateLimit       RateLimitConfig `yaml:"rate_limit"`
+	URLPrefix       string          `yaml:"url_prefix" env:"URL_PREFIX" env-default:""`
+	EnableBasicAuth bool            `yaml:"enable_basic_auth" env:"ENABLE_BASIC_AUTH"`
 }
 
 func Load(configPath string) (Config, error) {

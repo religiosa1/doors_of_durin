@@ -75,12 +75,12 @@ func TestCheckPassword(t *testing.T) {
 	})
 
 	t.Run("wrong password", func(t *testing.T) {
-		userID, err := users.CheckPassword(*db, "alice", "wrong")
-		if err != nil {
-			t.Fatalf("CheckPassword: %v", err)
+		_, err := users.CheckPassword(*db, "alice", "wrong")
+		if err == nil {
+			t.Fatal("expected to fail on wrong password")
 		}
-		if userID != 0 {
-			t.Fatal("expected false for wrong password")
+		if !errors.Is(err, users.ErrBadPassword) {
+			t.Fatalf("expected ErrBadPassword, got %v", err)
 		}
 	})
 }
@@ -110,12 +110,12 @@ func TestUpdatePassword(t *testing.T) {
 		t.Fatal("expected new password to work after update")
 	}
 
-	userID, err = users.CheckPassword(*db, "alice", "old")
-	if err != nil {
-		t.Fatalf("CheckPassword old: %v", err)
-	}
-	if userID != 0 {
+	_, err = users.CheckPassword(*db, "alice", "old")
+	if err == nil {
 		t.Fatal("expected old password to fail after update")
+	}
+	if !errors.Is(err, users.ErrBadPassword) {
+		t.Fatalf("expected ErrBadPassword, got %v", err)
 	}
 }
 
