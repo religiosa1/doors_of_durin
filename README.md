@@ -8,7 +8,8 @@ small and manually controlled list of users -- basically your family members.
 
 _Speak, friend, and enter._
 
-If you're looking for a full-featured, production scale one look at [Authelia](https://www.authelia.com/).
+If you're looking for a full-featured, production scale one look at [Authelia](https://www.authelia.com/) or
+[Authentik](https://goauthentik.io/).
 
 Can also work behind [traefik](https://traefik.io/) or [caddy](https://caddyserver.com/).
 
