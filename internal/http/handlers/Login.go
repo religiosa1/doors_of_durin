@@ -134,7 +134,9 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	sessionID, err := l.AuthService.Login(username, password)
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrBadPassword) || errors.Is(err, service.ErrUserDisabled) {
+		if errors.Is(err, service.ErrUserNotFound) ||
+			errors.Is(err, service.ErrBadPassword) ||
+			errors.Is(err, service.ErrUserDisabled) {
 			logger.Info("login failed")
 			if wasBlocked := l.recordFailure(ip); wasBlocked {
 				logger.Warn("IP address blocked by the rate limiter")
@@ -154,7 +156,8 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		// MaxAge 0 omits the attribute entirely, making this a session cookie — matches TTL=0 meaning no expiry on the server side too.
+		// MaxAge 0 omits the attribute entirely, making this a session cookie
+		// matches TTL=0 meaning no expiry on the server side too.
 		MaxAge: int(l.SessionTTL.Seconds()),
 	})
 

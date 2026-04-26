@@ -28,7 +28,10 @@ func GetSession(db repository.DB, sessionID string) (Session, error) {
 }
 
 func RegisterSessionUsage(db repository.DB, sessionID string) error {
-	_, err := db.DB.Exec("UPDATE `sessions` SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?", sessionID)
+	_, err := db.DB.Exec(
+		"UPDATE `sessions` SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?",
+		sessionID,
+	)
 	return err
 }
 
@@ -85,7 +88,9 @@ func List(db repository.DB, filter Filter) ([]Session, error) {
 	query := `
 		SELECT s.id, u.name AS username, s.created_at, s.last_used_at
 		FROM sessions s
-		JOIN users u ON u.id = s.user_id` + whereClause(conds) + " ORDER BY s.created_at DESC"
+		JOIN users u ON u.id = s.user_id` +
+		whereClause(conds) +
+		" ORDER BY s.created_at DESC"
 
 	var result []Session
 	err := db.DB.Select(&result, query, args...)

@@ -59,7 +59,9 @@ func Create(db repository.DB, username string, password string) error {
 func CheckPassword(db repository.DB, username string, password string) (int64, error) {
 	var userID int64
 	var hash sql.NullString
-	err := db.DB.QueryRow("SELECT `id`, `password_hash` FROM `users` WHERE `name` = ?", username).Scan(&userID, &hash)
+	err := db.DB.
+		QueryRow("SELECT `id`, `password_hash` FROM `users` WHERE `name` = ?", username).
+		Scan(&userID, &hash)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, repository.ErrRecordNotFound
 	}

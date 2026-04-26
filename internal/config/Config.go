@@ -28,7 +28,7 @@ type Config struct {
 	Host            string          `yaml:"host" env:"HOST" env-default:"localhost"`
 	SessionTTL      time.Duration   `yaml:"session_ttl" env:"SESSION_TTL" env-default:"168h"`
 	RateLimit       RateLimitConfig `yaml:"rate_limit"`
-	URLPrefix       string          `yaml:"url_prefix" env:"URL_PREFIX" env-default:""`
+	URLPrefix       string          `yaml:"url_prefix" env:"URL_PREFIX"`
 	EnableBasicAuth bool            `yaml:"enable_basic_auth" env:"ENABLE_BASIC_AUTH"`
 }
 
