@@ -10,9 +10,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/religiosa1/doors_of_durin/internal/config"
 	handlers "github.com/religiosa1/doors_of_durin/internal/http/handlers"
 	middleware "github.com/religiosa1/doors_of_durin/internal/http/middleware"
-	"github.com/religiosa1/doors_of_durin/internal/config"
 	"github.com/religiosa1/doors_of_durin/internal/ratelimit"
 	"github.com/religiosa1/doors_of_durin/internal/repository"
 	"github.com/religiosa1/doors_of_durin/internal/service"
@@ -103,7 +103,7 @@ func setupLogger(logType string, logLevel string) *slog.Logger {
 	case "json":
 		logger = slog.New((slog.NewJSONHandler(os.Stdout, handlerOpts)))
 	default:
-		log.Fatalf("Unknown logger type %s", logType)
+		log.Fatalf("Unknown logger type %q", logType)
 	}
 	return logger
 }
@@ -119,7 +119,7 @@ func strLogLevelToEnumValue(logLevel string) slog.Level {
 	case "error":
 		return slog.LevelError
 	default:
-		log.Fatalf("Unexpected log level %s", logLevel)
+		log.Fatalf("Unexpected log level %q", logLevel)
 		return slog.LevelInfo
 	}
 }

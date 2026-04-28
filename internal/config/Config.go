@@ -39,7 +39,7 @@ func Load(configPath string) (Config, error) {
 	if !pathExplicitlySet {
 		configPath = os.Getenv(configPathEnvKey)
 		if configPath != "" {
-			triedPaths = append(triedPaths, fmt.Sprintf("%s (from %s)", configPath, configPathEnvKey))
+			triedPaths = append(triedPaths, fmt.Sprintf("%q (from %q)", configPath, configPathEnvKey))
 		}
 		if configPath == "" {
 			// Try default config paths in order: user config, then global config
@@ -53,7 +53,7 @@ func Load(configPath string) (Config, error) {
 			}
 		}
 	} else {
-		triedPaths = append(triedPaths, fmt.Sprintf("%s (explicitly set)", configPath))
+		triedPaths = append(triedPaths, fmt.Sprintf("%q (explicitly set)", configPath))
 	}
 
 	var cfg Config
@@ -65,7 +65,7 @@ func Load(configPath string) (Config, error) {
 
 	if !fileExists {
 		if pathExplicitlySet {
-			return cfg, fmt.Errorf("specified config file does not exist: %s", configPath)
+			return cfg, fmt.Errorf("specified config file does not exist: %q", configPath)
 		}
 		if err := cleanenv.ReadEnv(&cfg); err != nil {
 			return cfg, fmt.Errorf("error loading configuration from environment: %w\nTried config paths:\n  %s",
@@ -91,7 +91,7 @@ func validateLogLevel(logLevel string) error {
 	case "debug", "info", "warn", "error":
 		return nil
 	}
-	return fmt.Errorf("unknown log level: '%s'", logLevel)
+	return fmt.Errorf("unknown log level: %q", logLevel)
 }
 
 func validateLogType(logType string) error {
@@ -99,7 +99,7 @@ func validateLogType(logType string) error {
 	case "json", "text":
 		return nil
 	}
-	return fmt.Errorf("unknown log type: %s", logType)
+	return fmt.Errorf("unknown log type: %q", logType)
 }
 
 func formatTriedPaths(paths []string) string {
