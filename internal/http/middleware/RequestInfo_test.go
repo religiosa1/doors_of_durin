@@ -1,10 +1,49 @@
 package middleware_test
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/religiosa1/doors_of_durin/internal/http/middleware"
 )
+
+func TestXForwardForStripping(t *testing.T) {
+	const remoteAddr = "192.51.100.1"
+	tests := []struct {
+		name   string
+		header string
+		want   string
+	}{
+		{
+			"uses a single value from X-Forwarded-For",
+			"198.51.100.2",
+			"198.51.100.2",
+		},
+		{
+			"extracts the first value from X-Forwarded-For, if multiple are provided",
+			"198.51.100.3, 198.51.100.4",
+			"198.51.100.3",
+		},
+		{
+			"falls back to remoteAddr if no header is provided",
+			"",
+			remoteAddr,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest(http.MethodGet, "/", nil)
+			r.RemoteAddr = remoteAddr
+			r.Header.Set("X-Forwarded-For", tt.header)
+			info := middleware.ParseRequestInfo(r)
+			if got := info.IP; tt.want != got {
+				t.Errorf("Unexpected IP addr value; want %q got %q", tt.want, got)
+			}
+		})
+	}
+}
 
 func TestOriginalURL(t *testing.T) {
 	tests := []struct {

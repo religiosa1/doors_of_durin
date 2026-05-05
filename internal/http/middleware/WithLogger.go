@@ -32,10 +32,11 @@ func WithLogger(logger *slog.Logger) Middleware {
 			ctx := context.WithValue(r.Context(), loggingContextRequestID, id)
 			ctx = context.WithValue(ctx, loggingContextLogger, newLogger)
 
-			info := parseRequestInfo(r)
+			info := ParseRequestInfo(r)
 			ctx = context.WithValue(ctx, loggingContextRequestInfo, info)
 
-			newLogger.Debug("Incoming request",
+			newLogger.Debug(
+				"Incoming request",
 				slog.String("method", info.Method),
 				slog.String("scheme", info.Scheme),
 				slog.String("path", info.Path),

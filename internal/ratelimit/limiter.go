@@ -41,6 +41,7 @@ func New(cfg Config) *Limiter {
 func (l *Limiter) Stop() {
 	if l.stop != nil {
 		close(l.stop)
+		l.stop = nil
 	}
 }
 

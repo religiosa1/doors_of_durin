@@ -1,6 +1,6 @@
 module github.com/religiosa1/doors_of_durin
 
-go 1.25.8
+go 1.26.2
 
 require (
 	github.com/alecthomas/kong v1.14.0

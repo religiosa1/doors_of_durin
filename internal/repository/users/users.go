@@ -27,7 +27,7 @@ type User struct {
 
 func List(db repository.DB) ([]User, error) {
 	var result []User
-	err := db.DB.Select(&result, "SELECT name, created_at, modified_at FROM users ORDER BY name")
+	err := db.DB.Select(&result, "SELECT name, last_basic_auth_at, created_at, modified_at FROM users ORDER BY name")
 	return result, err
 }
 

@@ -1,6 +1,9 @@
 package middleware
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
 // RequestInfo is basic information about the incoming http request
 type RequestInfo struct {
@@ -24,8 +27,8 @@ type RequestInfo struct {
 	IP string
 }
 
-// ParseInfo parses Info from the request
-func parseRequestInfo(r *http.Request) RequestInfo {
+// ParseRequestInfo parses Info from the request
+func ParseRequestInfo(r *http.Request) RequestInfo {
 	var info RequestInfo
 
 	if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
@@ -50,8 +53,9 @@ func parseRequestInfo(r *http.Request) RequestInfo {
 	}
 	info.URI = r.Header.Get("X-Forwarded-URI")
 	info.Path = r.URL.Path
-	if remoteAddr := r.Header.Get("X-Forwarded-For"); remoteAddr != "" {
-		info.IP = remoteAddr
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		firstProxy, _, _ := strings.Cut(xff, ",")
+		info.IP = strings.TrimSpace(firstProxy)
 	} else {
 		info.IP = r.RemoteAddr
 	}
