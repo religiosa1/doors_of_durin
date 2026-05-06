@@ -53,7 +53,9 @@ func ParseRequestInfo(r *http.Request) RequestInfo {
 	}
 	info.URI = r.Header.Get("X-Forwarded-URI")
 	info.Path = r.URL.Path
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+	if xri := r.Header.Get("X-Real-IP"); xri != "" {
+		info.IP = xri
+	} else if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		firstProxy, _, _ := strings.Cut(xff, ",")
 		info.IP = strings.TrimSpace(firstProxy)
 	} else {

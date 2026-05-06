@@ -8,27 +8,38 @@ import (
 	"github.com/religiosa1/doors_of_durin/internal/http/middleware"
 )
 
-func TestXForwardForStripping(t *testing.T) {
+func TestIPResolution(t *testing.T) {
 	const remoteAddr = "192.51.100.1"
 	tests := []struct {
-		name   string
-		header string
-		want   string
+		name    string
+		realIP  string
+		xff     string
+		want    string
 	}{
 		{
-			"uses a single value from X-Forwarded-For",
-			"198.51.100.2",
-			"198.51.100.2",
+			name:   "uses X-Real-IP when set",
+			realIP: "198.51.100.2",
+			want:   "198.51.100.2",
 		},
 		{
-			"extracts the first value from X-Forwarded-For, if multiple are provided",
-			"198.51.100.3, 198.51.100.4",
-			"198.51.100.3",
+			name:   "X-Real-IP takes precedence over X-Forwarded-For",
+			realIP: "198.51.100.2",
+			xff:    "198.51.100.9",
+			want:   "198.51.100.2",
 		},
 		{
-			"falls back to remoteAddr if no header is provided",
-			"",
-			remoteAddr,
+			name: "falls back to first X-Forwarded-For entry when X-Real-IP absent",
+			xff:  "198.51.100.3",
+			want: "198.51.100.3",
+		},
+		{
+			name: "extracts first value from X-Forwarded-For when multiple are provided",
+			xff:  "198.51.100.3, 198.51.100.4",
+			want: "198.51.100.3",
+		},
+		{
+			name: "falls back to remoteAddr when no headers are provided",
+			want: remoteAddr,
 		},
 	}
 
@@ -36,7 +47,12 @@ func TestXForwardForStripping(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := httptest.NewRequest(http.MethodGet, "/", nil)
 			r.RemoteAddr = remoteAddr
-			r.Header.Set("X-Forwarded-For", tt.header)
+			if tt.realIP != "" {
+				r.Header.Set("X-Real-IP", tt.realIP)
+			}
+			if tt.xff != "" {
+				r.Header.Set("X-Forwarded-For", tt.xff)
+			}
 			info := middleware.ParseRequestInfo(r)
 			if got := info.IP; tt.want != got {
 				t.Errorf("Unexpected IP addr value; want %q got %q", tt.want, got)

@@ -140,8 +140,9 @@ Host Detection:
   Fallback: Host (header)
 
 Remote IP:
-  Default: X-Forwarded-For
-  Fallback: TCP source IP
+  Default: X-Real-IP (header)
+  Fallback: X-Forwarded-For (first entry)
+  Last resort: TCP source IP
 ```
 
 ## Nginx configuration example
@@ -155,7 +156,7 @@ Remote IP:
       proxy_set_header X-Forwarded-Proto $scheme;
       proxy_set_header X-Forwarded-Host $http_host;
       proxy_set_header X-Forwarded-URI $request_uri;
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Real-IP $remote_addr;
 
       # Internal auth subrequest
       location = /auth-check {
