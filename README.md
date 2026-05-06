@@ -31,11 +31,17 @@ Stores a list of users and their passwords in a local
 sqlite database. Authorization is implemented as session headers, sessions
 are stored in the same database.
 
-The main endpoint is `/verify`. It's intended to be used as the destination of
-nginx `auth_request` -- it receives headers from request to upstream and
+The main endpoint is `GET /verify`. It's intended to be used as the destination
+of nginx `auth_request` -- it receives headers from request to upstream and
 returns either 200 or 401 status based on the presence and validity of the
 session id cookie. On a 200 response it sets an `X-Auth-User` header containing
 the authenticated username, which can be forwarded to the upstream application.
+
+Please notice, that cookies are set with Secure and HttpOnly 
+[attributes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies#security).
+That means they will not be acessible on plain HTTP connection, only HTTPS.
+It's there just to make sure, your session cookie won't be sniffed on a initial 
+non HTTP connection if you have a redirect from HTTP to HTTPS.
 
 On 401 responses, users should be redirected by nginx to the `/login` page,
 which will allow user to enter their login/password and will set the session id

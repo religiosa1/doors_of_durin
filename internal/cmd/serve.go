@@ -71,7 +71,9 @@ func (s *Serve) Run() error {
 
 		mux.HandleFunc("GET /{$}", handlers.Healthcheck)
 
-		mux.Handle("/verify", middlewares(handlers.Verify{AuthService: authService, Limiter: limiter, EnableBasicAuth: cfg.EnableBasicAuth}))
+		// nginx and caddy always sent GET request here. traefik by default sends GET as well, but can be configured
+		// with preserveRequestMethod to forward the actual request type -- this is not supported by us.
+		mux.Handle("GET /verify", middlewares(handlers.Verify{AuthService: authService, Limiter: limiter, EnableBasicAuth: cfg.EnableBasicAuth}))
 		mux.Handle("GET /login", middlewares(handlers.Login{URLPrefix: cfg.URLPrefix}))
 		mux.Handle("POST /login", middlewares(handlers.LoginSubmit{AuthService: authService, Limiter: limiter, SessionTTL: cfg.SessionTTL, URLPrefix: cfg.URLPrefix}))
 		mux.Handle("POST /logout", middlewares(handlers.Logout{AuthService: authService}))
@@ -101,7 +103,7 @@ func setupLogger(logType string, logLevel string) *slog.Logger {
 	case "text":
 		logger = slog.New(slog.NewTextHandler(os.Stdout, handlerOpts))
 	case "json":
-		logger = slog.New((slog.NewJSONHandler(os.Stdout, handlerOpts)))
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, handlerOpts))
 	default:
 		log.Fatalf("Unknown logger type %q", logType)
 	}

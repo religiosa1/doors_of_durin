@@ -155,6 +155,7 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 		// MaxAge 0 omits the attribute entirely, making this a session cookie
 		// matches TTL=0 meaning no expiry on the server side too.
