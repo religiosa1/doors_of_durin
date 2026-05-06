@@ -37,9 +37,9 @@ func (l Logout) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   -1,
 	})
 
-	target := r.URL.Query().Get("back_url")
-	if target == "" {
-		target = "/"
+	target := "/"
+	if backURL, err := sanitizeURLToRelative(r.URL.Query().Get("back_url")); err == nil {
+		target = backURL
 	}
 	http.Redirect(w, r, target, http.StatusSeeOther)
 }

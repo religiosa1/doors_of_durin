@@ -175,6 +175,41 @@ func TestLoginSubmit_Success_WithRedirectTo(t *testing.T) {
 	}
 }
 
+func TestLoginSubmit_RedirectStripping(t *testing.T) {
+	tests := []struct {
+		name       string
+		redirectTo string
+		wantLoc    string
+	}{
+		{"absolute URL stripped to path", "https://evil.com/protected", "/protected"},
+		{"protocol-relative URL stripped to path", "//evil.com/protected", "/protected"},
+		{"broken protocol-relative URLs are sanitized", "///evil.com/protected", "/evil.com/protected"},
+		{"really broken protocol-relative URLs are sanitized", "////evil.com/protected", "/evil.com/protected"},
+		{"javascript urls are declined", "javascript:alert('hi!')", "/"},
+		{"file urls are declined", "file:///bah", "/"},
+		{"relative path with query is unchanged", "/dashboard?tab=1", "/dashboard?tab=1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := newTestDB(t)
+			if err := users.Create(*db, "alice", "secret"); err != nil {
+				t.Fatalf("Create: %v", err)
+			}
+
+			rr := httptest.NewRecorder()
+			handlers.LoginSubmit{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, loginRequest(t, "alice", "secret", tt.redirectTo))
+
+			if rr.Code != http.StatusSeeOther {
+				t.Fatalf("expected status %d, got %d", http.StatusSeeOther, rr.Code)
+			}
+			if loc := rr.Header().Get("Location"); loc != tt.wantLoc {
+				t.Errorf("Location = %q, want %q", loc, tt.wantLoc)
+			}
+		})
+	}
+}
+
 func TestLoginSubmit_WrongPassword(t *testing.T) {
 	db := newTestDB(t)
 	if err := users.Create(*db, "alice", "correct"); err != nil {

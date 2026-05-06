@@ -98,6 +98,39 @@ func TestLogout_WithBackURL(t *testing.T) {
 	}
 }
 
+func TestLogout_RedirectStripping(t *testing.T) {
+	tests := []struct {
+		name    string
+		backURL string
+		wantLoc string
+	}{
+		{"absolute URL stripped to path", "https://evil.com/goodbye", "/goodbye"},
+		{"protocol-relative URL stripped to path", "//evil.com/goodbye", "/goodbye"},
+		{"broken protocol-relative URLs are sanitized", "///evil.com/goodbye", "/evil.com/goodbye"},
+		{"really broken protocol-relative URLs are sanitized", "////evil.com/goodbye", "/evil.com/goodbye"},
+		{"javascript urls are declined", "javascript:alert('hi!')", "/"},
+		{"file urls are declined", "file:///bah", "/"},
+		{"relative path with query is unchanged", "/goodbye?confirmed=1", "/goodbye?confirmed=1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := newTestDB(t)
+			sessionID := createTestSession(t, db, "alice")
+
+			rr := httptest.NewRecorder()
+			handlers.Logout{AuthService: service.AuthService{DB: db}}.ServeHTTP(rr, logoutRequest(sessionID, tt.backURL))
+
+			if rr.Code != http.StatusSeeOther {
+				t.Fatalf("expected %d, got %d", http.StatusSeeOther, rr.Code)
+			}
+			if loc := rr.Header().Get("Location"); loc != tt.wantLoc {
+				t.Errorf("Location = %q, want %q", loc, tt.wantLoc)
+			}
+		})
+	}
+}
+
 func TestLogout_StaleSessionCookie_SucceedsAndClearsCookie(t *testing.T) {
 	db := newTestDB(t)
 

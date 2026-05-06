@@ -161,9 +161,9 @@ func (l LoginSubmit) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MaxAge: int(l.SessionTTL.Seconds()),
 	})
 
-	target := redirectTo
-	if target == "" {
-		target = "/"
+	target := "/"
+	if backURL, err := sanitizeURLToRelative(redirectTo); err == nil {
+		target = backURL
 	}
 	http.Redirect(w, r, target, http.StatusSeeOther)
 }
