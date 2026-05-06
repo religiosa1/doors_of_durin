@@ -11,19 +11,21 @@ _Speak, friend, and enter._
 If you're looking for a full-featured, production scale one look at [Authelia](https://www.authelia.com/) or
 [Authentik](https://goauthentik.io/).
 
-Can also work behind [traefik](https://traefik.io/) or [caddy](https://caddyserver.com/).
+Can also work behind [traefik](https://doc.traefik.io/traefik/reference/routing-configuration/http/middlewares/forwardauth/) 
+or [caddy](https://caddyserver.com/docs/caddyfile/directives/forward_auth).
 
 ## Features
 
 - lightweight, minimal dependency, single-binary distribution
 - ULID-based session authentication
-- Optional basic-auth support for API access
-- full structured logging for everything
-- WAL-mode sqlite with hashed passwords -- once written, cannot be decoded back
-- rate-limiting by IP for the login endpoint against brute-force attacks
+- session cookie with Secure and HttpOnly attributes on the cookies to prevent sniffing
+- optional basic-auth support for API access
 - small sleep on failed login attempts to make targeted users attacks more difficult
-- CSRF protection on the login endpoint
+- rate-limiting by IP for the login endpoint against brute-force attacks
 - CLI for user and session management
+- full structured logging for everything
+- CSRF protection on the login endpoint
+- WAL-mode sqlite with hashed passwords -- once written, cannot be read or leaked
 
 ## How it works
 
