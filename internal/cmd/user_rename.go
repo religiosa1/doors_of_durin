@@ -42,8 +42,9 @@ func (u *UserRename) Run() error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
-
+	defer func() {
+		_ = db.Close()
+	}()
 	if err := users.Rename(*db, username, newName); err != nil {
 		return fmt.Errorf("renaming user: %w", err)
 	}

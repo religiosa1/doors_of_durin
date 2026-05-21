@@ -26,7 +26,9 @@ func (s *SessionList) Run() error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 
 	list, err := sessions.List(*db, filter)
 	if err != nil {
@@ -49,7 +51,8 @@ func (s *SessionList) Run() error {
 		if sess.LastUsedAt != nil {
 			lastUsed = sess.LastUsedAt.Format(time.DateTime)
 		}
-		_, err = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+		_, err = fmt.Fprintf(
+			w, "%s\t%s\t%s\t%s\n",
 			sess.ID,
 			sess.Username,
 			sess.CreatedAt.Format(time.DateTime),

@@ -33,7 +33,8 @@ func main() {
 	cmd.StaticFiles = staticFiles
 
 	var cli CLI
-	ctx := kong.Parse(&cli,
+	ctx := kong.Parse(
+		&cli,
 		kong.Name("auth_server"),
 		kong.Description("Authentication server"),
 		kong.UsageOnError(),

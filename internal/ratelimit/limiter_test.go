@@ -15,7 +15,7 @@ func TestLimiter_NotBlockedBeforeThreshold(t *testing.T) {
 	now := time.Now()
 	l := ratelimit.NewWithClock(ratelimit.Config{MaxAttempts: 10, Window: time.Minute}, fixedClock(now))
 
-	for i := 0; i < 9; i++ {
+	for range 9 {
 		l.RecordFailure("1.2.3.4")
 	}
 	if l.IsBlocked("1.2.3.4") {
@@ -27,7 +27,7 @@ func TestLimiter_BlockedAtThreshold(t *testing.T) {
 	now := time.Now()
 	l := ratelimit.NewWithClock(ratelimit.Config{MaxAttempts: 10, Window: time.Minute}, fixedClock(now))
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		l.RecordFailure("1.2.3.4")
 	}
 	if !l.IsBlocked("1.2.3.4") {
@@ -42,7 +42,7 @@ func TestLimiter_WindowResetUnblocks(t *testing.T) {
 
 	l := ratelimit.NewWithClock(ratelimit.Config{MaxAttempts: 3, Window: window}, clock)
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		l.RecordFailure("1.2.3.4")
 	}
 	if !l.IsBlocked("1.2.3.4") {
@@ -59,7 +59,7 @@ func TestLimiter_DifferentIPsAreIndependent(t *testing.T) {
 	now := time.Now()
 	l := ratelimit.NewWithClock(ratelimit.Config{MaxAttempts: 3, Window: time.Minute}, fixedClock(now))
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		l.RecordFailure("1.2.3.4")
 	}
 	if l.IsBlocked("5.6.7.8") {

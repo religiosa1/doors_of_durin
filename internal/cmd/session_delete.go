@@ -47,7 +47,9 @@ func (s *SessionDelete) Run() error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 
 	n, err := sessions.DeleteSessions(*db, filter)
 	if err != nil {

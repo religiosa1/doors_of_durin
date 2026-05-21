@@ -44,7 +44,9 @@ func (s *SessionAdd) Run() error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 	authService := service.AuthService{
 		DB:         db,
 		SessionTTL: cfg.SessionTTL,

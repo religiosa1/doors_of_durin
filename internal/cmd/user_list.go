@@ -20,8 +20,9 @@ func (u *UserList) Run() error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
-
+	defer func() {
+		_ = db.Close()
+	}()
 	list, err := users.List(*db)
 	if err != nil {
 		return fmt.Errorf("listing users: %w", err)
@@ -39,7 +40,8 @@ func (u *UserList) Run() error {
 		return err
 	}
 	for _, user := range list {
-		_, err := fmt.Fprintf(w, "%s\t%s\t%s\n",
+		_, err := fmt.Fprintf(
+			w, "%s\t%s\t%s\n",
 			user.Name,
 			user.CreatedAt.Format(time.DateTime),
 			user.ModifiedAt.Format(time.DateTime),

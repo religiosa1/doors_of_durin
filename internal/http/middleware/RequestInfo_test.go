@@ -11,10 +11,10 @@ import (
 func TestIPResolution(t *testing.T) {
 	const remoteAddr = "192.51.100.1"
 	tests := []struct {
-		name    string
-		realIP  string
-		xff     string
-		want    string
+		name   string
+		realIP string
+		xff    string
+		want   string
 	}{
 		{
 			name:   "uses X-Real-IP when set",

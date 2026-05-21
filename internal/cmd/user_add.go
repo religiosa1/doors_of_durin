@@ -50,7 +50,9 @@ func (u *UserAdd) Run() error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 
 	if err := users.Create(*db, username, password); err != nil {
 		return fmt.Errorf("creating user: %w", err)
