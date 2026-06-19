@@ -56,12 +56,30 @@ func Create(db repository.DB, username string, password string) error {
 	return err
 }
 
-func CheckPassword(db repository.DB, username string, password string) (int64, error) {
-	var userID int64
+var dummyHash = mustHash("blah blah blah")
+
+func mustHash(pw string) string {
+	h, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
+	if err != nil {
+		panic(err)
+	}
+	return string(h)
+}
+
+func CheckPassword(db repository.DB, username string, password string) (userID int64, err error) {
+	hashRun := false
+	defer func() {
+		// empty cycle so we don't expose bad users to timing attacks
+		if !hashRun {
+			_ = checkPassword("dummy password", dummyHash)
+		}
+	}()
+
 	var hash sql.NullString
-	err := db.DB.
+	err = db.DB.
 		QueryRow("SELECT `id`, `password_hash` FROM `users` WHERE `name` = ?", username).
 		Scan(&userID, &hash)
+
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, repository.ErrRecordNotFound
 	}
@@ -72,7 +90,9 @@ func CheckPassword(db repository.DB, username string, password string) (int64, e
 		return 0, ErrNoPasswordSet
 	}
 
-	if !checkPassword(password, hash.String) {
+	passOk := checkPassword(password, hash.String)
+	hashRun = true
+	if !passOk {
 		return 0, ErrBadPassword
 	}
 	return userID, nil

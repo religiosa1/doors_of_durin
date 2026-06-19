@@ -16,6 +16,7 @@ type AuthService struct {
 	SessionTTL time.Duration
 }
 
+// those granular errors are not exposed outside of service layer to the caller
 var (
 	ErrUserNotFound    = errors.New("user not found")
 	ErrBadPassword     = errors.New("wrong password")
